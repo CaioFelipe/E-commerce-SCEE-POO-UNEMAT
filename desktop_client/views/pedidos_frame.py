@@ -11,26 +11,29 @@ class PedidosFrame(tk.Frame):
         toolbar.pack(side="top", fill="x")
 
         tk.Button(toolbar, text="Atualizar Lista", command=self.carregar_dados).pack(side="left", padx=5)
-        tk.Button(toolbar, text="Marcar como Enviado", command=self.despachar_pedido, bg="#28a745", fg="white").pack(side="left", padx=5)
+        
+        btn_enviar = tk.Button(toolbar, text="Marcar como Enviado", command=self.despachar_pedido, bg="#28a745", fg="white")
+        btn_enviar.pack(side="left", padx=5)
 
         # Tabela de Pedidos (Treeview)
+        # Mudamos a coluna 'cliente' para exibir Nome
         columns = ("id", "cliente", "total", "status", "endereco")
         self.tree = ttk.Treeview(self, columns=columns, show="headings")
         
         self.tree.heading("id", text="ID")
         self.tree.column("id", width=50, anchor="center")
         
-        self.tree.heading("cliente", text="Cliente (ID)")
-        self.tree.column("cliente", width=100, anchor="center")
+        self.tree.heading("cliente", text="Cliente") # Antes era "Cliente (ID)"
+        self.tree.column("cliente", width=150, anchor="w")
         
         self.tree.heading("total", text="Total (R$)")
         self.tree.column("total", width=100, anchor="e")
         
         self.tree.heading("status", text="Status")
-        self.tree.column("status", width=120, anchor="center")
+        self.tree.column("status", width=100, anchor="center")
         
         self.tree.heading("endereco", text="Endereço de Entrega")
-        self.tree.column("endereco", width=300)
+        self.tree.column("endereco", width=350)
 
         # Barra de Rolagem
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
@@ -45,12 +48,28 @@ class PedidosFrame(tk.Frame):
             self.tree.delete(item)
             
         bridge = self.controller.get_bridge()
-        pedidos = bridge.listar_pedidos() # Requisição GET para API
+        pedidos = bridge.listar_pedidos() 
+
+        # Se vier vazio ou None, não faz nada
+        if not pedidos:
+            return
 
         for p in pedidos:
-            # Formata valores para exibição
             valor_fmt = f"R$ {p['total']:.2f}"
-            self.tree.insert("", "end", values=(p['id'], p['cliente_id'], valor_fmt, p['status'], p['endereco_entrega']))
+            
+            # Tenta pegar o nome, se não vier (código antigo), usa ID ou "Desconhecido"
+            cliente_display = p.get('cliente_nome', 'Cliente #' + str(p.get('cliente_id', '?')))
+            
+            # Estilização simples baseada no status
+            status = p['status']
+            
+            item_id = self.tree.insert("", "end", values=(
+                p['id'], 
+                cliente_display, 
+                valor_fmt, 
+                status, 
+                p['endereco_entrega']
+            ))
 
     def despachar_pedido(self):
         selected_item = self.tree.selection()
@@ -71,6 +90,6 @@ class PedidosFrame(tk.Frame):
 
         if sucesso:
             messagebox.showinfo("Sucesso", f"Pedido #{pedido_id} marcado como ENVIADO!")
-            self.carregar_dados() # Recarrega para mostrar novo status
+            self.carregar_dados() 
         else:
             messagebox.showerror("Erro", "Falha ao atualizar status no servidor.")

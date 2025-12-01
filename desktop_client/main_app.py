@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
-from .controllers.bridge import BridgeController
+from controllers.bridge import BridgeController
 
 # Importação das Views
-from .views.login_view import LoginView
-from .views.dashboard_view import DashboardView
+from views.login_view import LoginView
+from views.dashboard_view import DashboardView
 
 class MainApp(tk.Tk):
     def __init__(self):
