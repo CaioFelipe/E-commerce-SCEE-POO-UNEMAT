@@ -1,0 +1,55 @@
+SCEE_Project/
+│
+├── config.py                 # Configurações (Secret Key, DB Path, Upload Folder) [cite: 637]
+├── main.py                   # Entry Point da API Flask (Registra Blueprints) [cite: 635]
+├── database_setup.py         # Script de DDL e Seed Inicial [cite: 641]
+├── requirements.txt          # Dependências (Flask, Argon2, Requests, Pillow)
+│
+├── core/                     # NÚCLEO (Regras de Negócio & Persistência)
+│   ├── database.py           # Singleton de conexão SQLite
+│   ├── models/               # Entidades Puras (POO) [cite: 643]
+│   │   ├── __init__.py
+│   │   ├── usuario.py        # Classe Base [cite: 82]
+│   │   ├── cliente.py        # Herança de Usuario [cite: 90]
+│   │   ├── administrador.py  # Herança de Usuario [cite: 97]
+│   │   ├── produto.py        # Lógica de Estoque [cite: 109]
+│   │   ├── categoria.py
+│   │   ├── pedido.py         # Aggregate Root [cite: 133]
+│   │   ├── item_pedido.py    # Log Histórico [cite: 139]
+│   │   ├── carrinho.py       # Lógica de cálculo (transiente)
+│   │   └── endereco.py       # Value Object
+│   │
+│   └── repositories/         # Camada de Acesso a Dados (SQL Isolado) [cite: 674]
+│       ├── base_repo.py      # Interface genérica CRUD
+│       ├── usuario_repo.py
+│       ├── produto_repo.py
+│       └── pedido_repo.py    # Gerencia Transações Atômicas
+│
+├── services/                 # CAMADA DE SERVIÇO (Orquestração)
+│   # Esta camada serve tanto à API quanto ao Tkinter (se conexão direta)
+│   ├── auth_service.py       # Login, Registro, Hash
+│   ├── catalogo_service.py   # Gestão de Produtos
+│   └── vendas_service.py     # Checkout, Processamento de Pedidos
+│
+├── api/                      # CAMADA DE EXPOSIÇÃO (Flask Blueprints)
+│   ├── __init__.py
+│   ├── api_web.py            # Rotas para o Cliente (Carlos) -> JSON
+│   ├── api_gestao.py         # Rotas para o Admin (Ana) -> JSON
+│   └── utils.py              # Decorators (Auth check), Serializers
+│
+├── web_client/               # FRONTEND WEB (Consumidor API)
+│   ├── index.html            # SPA Entry point ou páginas estáticas
+│   ├── css/
+│   │   └── styles.css        # Dark Mode Theme
+│   └── js/
+│       ├── api_client.js     # Fetch wrappers para api_web
+│       └── app.js            # Lógica de DOM
+│
+└── desktop_client/           # FRONTEND DESKTOP (Tkinter)
+    ├── main_app.py           # Loop principal do Tkinter
+    ├── views/
+    │   ├── login_view.py
+    │   ├── dashboard_view.py
+    │   └── product_form.py
+    └── controllers/          # Lógica de interface do Tkinter
+        └── bridge.py         # Conecta Tkinter à API ou Services

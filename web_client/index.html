@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCEE - Eletrônicos</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- CABEÇALHO -->
+    <header>
+        <div class="brand">
+            <h1><i class="fas fa-microchip"></i> SCEE Store</h1>
+        </div>
+        <nav>
+            <span id="user-display" class="hidden" style="margin-right: 15px; font-size: 0.9rem; color: var(--text-secondary);"></span>
+            
+            <button id="btn-login" onclick="toggleLogin()">
+                <i class="fas fa-sign-in-alt"></i> Entrar
+            </button>
+            
+            <!-- Botão Meu Perfil (Novo) -->
+            <button id="btn-profile" class="hidden" onclick="toggleProfile()">
+                <i class="fas fa-user-circle"></i> Meu Perfil
+            </button>
+
+            <button id="btn-cart" onclick="toggleCart()">
+                <i class="fas fa-shopping-cart"></i> Carrinho (<span id="cart-count">0</span>)
+            </button>
+            
+            <button id="btn-logout" class="hidden" onclick="logout()" style="border-color: var(--danger-color); color: var(--danger-color);">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </nav>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="container">
+        <div class="catalog-header" style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+            <h2>Destaques em Hardware</h2>
+            <p style="color: var(--text-secondary);">Os melhores componentes para o seu setup.</p>
+        </div>
+
+        <div id="product-list" class="product-grid">
+            <p style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                Carregando catálogo de produtos...
+            </p>
+        </div>
+    </main>
+
+    <!-- MODAL DE LOGIN -->
+    <div id="modal-login" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="close-btn" onclick="toggleLogin()">&times;</button>
+            <h2>Acessar Conta</h2>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="login-email" placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="login-pass" placeholder="Sua senha">
+            </div>
+            <button class="btn-add" onclick="fazerLogin()">Entrar</button>
+            <p id="login-error" style="color: var(--danger-color); margin-top: 10px; font-size: 0.9rem; text-align: center; min-height: 20px;"></p>
+            <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; border-top: 1px solid #333; padding-top: 15px;">
+                Não tem conta? <a href="#" onclick="alternarParaCadastro()" style="color: var(--accent-color); text-decoration: none;">Cadastre-se grátis</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO (Atualizado com Confirmação de Senha) -->
+    <div id="modal-cadastro" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="close-btn" onclick="toggleCadastro()">&times;</button>
+            <h2>Criar Conta</h2>
+            
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" id="cad-nome" placeholder="Ex: Carlos Silva">
+            </div>
+
+            <div class="form-group">
+                <label>CPF (Apenas números)</label>
+                <input type="text" id="cad-cpf" placeholder="000.000.000-00">
+            </div>
+            
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="cad-email" placeholder="seu@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="cad-senha" placeholder="Escolha uma senha forte">
+            </div>
+            
+            <!-- Campo Novo -->
+            <div class="form-group">
+                <label>Confirmar Senha</label>
+                <input type="password" id="cad-senha-conf" placeholder="Repita a senha">
+            </div>
+
+            <button class="btn-add" onclick="fazerCadastro()">Cadastrar</button>
+            <p id="cad-error" style="color: var(--danger-color); margin-top: 10px; font-size: 0.9rem; text-align: center; min-height: 20px;"></p>
+            <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; border-top: 1px solid #333; padding-top: 15px;">
+                Já tem conta? <a href="#" onclick="alternarParaLogin()" style="color: var(--accent-color); text-decoration: none;">Faça Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MEU PERFIL (Novo) -->
+    <div id="modal-profile" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="close-btn" onclick="toggleProfile()">&times;</button>
+            <h2>Meu Perfil</h2>
+            
+            <div class="form-group">
+                <label>CPF (Não alterável)</label>
+                <input type="text" id="perf-cpf" disabled style="background-color: #333; color: #888;">
+            </div>
+
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" id="perf-nome">
+            </div>
+            
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="perf-email">
+            </div>
+
+            <button class="btn-add" onclick="salvarPerfil()">Salvar Alterações</button>
+        </div>
+    </div>
+
+    <!-- MODAL DO CARRINHO & CHECKOUT -->
+    <div id="modal-cart" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <button class="close-btn" onclick="toggleCart()">&times;</button>
+            <h2>Seu Carrinho</h2>
+            
+            <!-- Lista de Itens -->
+            <div id="cart-items" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px; border-bottom: 1px solid #444;">
+                <p style="text-align: center; color: #777;">Seu carrinho está vazio.</p>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 1.1rem;">Total:</span>
+                <span style="font-size: 1.5rem; color: var(--success-color); font-weight: bold;">R$ <span id="cart-total">0.00</span></span>
+            </div>
+            
+            <!-- ÁREA DE CHECKOUT -->
+            <div id="checkout-area" class="hidden">
+                <hr style="border-color: #444; margin: 15px 0;">
+                
+                <!-- 1. Endereço -->
+                <h4 style="margin-top: 0; color: var(--accent-color);"><i class="fas fa-map-marker-alt"></i> Endereço de Entrega</h4>
+                <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="end-rua" placeholder="Rua / Avenida" required>
+                    <input type="number" id="end-num" placeholder="Nº" required>
+                </div>
+                <input type="text" id="end-bairro" placeholder="Bairro" required style="margin-bottom: 15px;">
+
+                <!-- 2. Pagamento -->
+                <h4 style="margin-top: 0; color: var(--accent-color);"><i class="fas fa-credit-card"></i> Pagamento</h4>
+                
+                <div style="margin-bottom: 15px; display: flex; gap: 20px;">
+                    <label style="cursor: pointer; display: flex; align-items: center;">
+                        <input type="radio" name="pagamento" value="pix" checked onchange="togglePagamento()"> 
+                        <span style="margin-left: 5px;">PIX (Instantâneo)</span>
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center;">
+                        <input type="radio" name="pagamento" value="cartao" onchange="togglePagamento()"> 
+                        <span style="margin-left: 5px;">Cartão de Crédito</span>
+                    </label>
+                </div>
+
+                <!-- Campo Extra para Cartão -->
+                <div id="div-cartao" class="hidden" style="margin-bottom: 15px;">
+                    <input type="text" id="pag-cartao-num" placeholder="Número do Cartão (16 dígitos)" maxlength="16">
+                </div>
+
+                <!-- Botão Final -->
+                <button class="btn-add" style="background-color: var(--success-color); color: #000; margin-top: 10px;" onclick="finalizarCompra()">
+                    FINALIZAR PEDIDO
+                </button>
+            </div>
+            
+            <!-- Botão Inicial -->
+            <button id="btn-checkout-start" class="btn-add" onclick="iniciarCheckout()">
+                Ir para Pagamento
+            </button>
+        </div>
+    </div>
+
+    <script src="js/api_client.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

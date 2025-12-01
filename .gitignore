@@ -1,1 +1,21 @@
-*.log
+# Python
+__pycache__/
+#*.py[cod]
+#*$py.class
+#venv/
+#env/
+
+# Banco de Dados (Não versionar dados reais)
+#*.db
+#*.sqlite3
+
+# Configurações com senhas
+#config.py
+
+# Uploads de imagens (Manter apenas o arquivo vazio .gitkeep se existir)
+#static/uploads/*
+#!static/uploads/.gitkeep
+
+# IDEs
+#.vscode/
+#.idea/

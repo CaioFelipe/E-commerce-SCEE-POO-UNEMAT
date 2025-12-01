@@ -1,0 +1,6 @@
+Flask
+argon2-cffi
+PyJWT
+requests
+flask-cors
+Werkzeug
