@@ -9,10 +9,18 @@ class VendasService:
 
     def realizar_checkout(self, usuario_id, dados_checkout):
         itens_carrinho = dados_checkout.get('itens')
-        total_calculado = dados_checkout.get('total')
-        end_data = dados_checkout.get('endereco') # Dict {rua, numero, bairro}
         
-        # 1. Salvar Endereço para o Futuro (Persistência)
+        # O total que vem do front já deve ser (Produtos + Frete) ou calculamos aqui.
+        # Para ser seguro, vamos confiar que o front manda:
+        # total_produtos: valor dos itens
+        # valor_frete: valor do frete
+        # total_final: soma dos dois
+        
+        valor_frete = float(dados_checkout.get('valor_frete', 0))
+        total_final = float(dados_checkout.get('total')) 
+        
+        end_data = dados_checkout.get('endereco')
+        
         if end_data:
             self.endereco_repo.salvar_ou_atualizar(
                 usuario_id, 
@@ -21,17 +29,16 @@ class VendasService:
                 end_data['bairro']
             )
 
-        # 2. Processamento de Pagamento (Polimorfismo)
         metodo = dados_checkout.get('metodo_pagamento', 'pix')
-        dados_pagamento_extra = dados_checkout.get('dados_pagamento', {}) # Ex: numero cartao
+        dados_pagamento_extra = dados_checkout.get('dados_pagamento', {}) 
 
         gateway = FabricaPagamento.criar(metodo)
-        pago_sucesso, msg_pagamento = gateway.processar_pagamento(total_calculado, dados_pagamento_extra)
+        # Processa o valor total (incluindo frete)
+        pago_sucesso, msg_pagamento = gateway.processar_pagamento(total_final, dados_pagamento_extra)
 
         if not pago_sucesso:
             raise ValueError(f"Pagamento Recusado: {msg_pagamento}")
 
-        # 3. Validação e Criação do Pedido
         if not itens_carrinho:
             raise ValueError("Carrinho vazio.")
 
@@ -41,8 +48,9 @@ class VendasService:
             pedido_id = self.pedido_repo.criar_pedido_atomico(
                 usuario_id=usuario_id,
                 itens_carrinho=itens_carrinho,
-                total=total_calculado,
-                endereco=endereco_str
+                total=total_final,     # Valor final pago
+                endereco=endereco_str,
+                valor_frete=valor_frete # Novo campo
             )
             return pedido_id
         except Exception as e:

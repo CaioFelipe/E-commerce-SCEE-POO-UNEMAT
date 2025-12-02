@@ -3,15 +3,18 @@ import uuid
 from core.database import get_db_connection
 
 class PedidoRepository:
-    def criar_pedido_atomico(self, usuario_id, itens_carrinho, total, endereco):
+    def criar_pedido_atomico(self, usuario_id, itens_carrinho, total, endereco, valor_frete):
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
             conn.execute("BEGIN TRANSACTION;")
+            
+            # Agora salvamos também o valor_frete
             cursor.execute("""
-                INSERT INTO pedidos (cliente_id, total, endereco_entrega, status, metodo_pagamento)
-                VALUES (?, ?, ?, 'Processando', 'Desconhecido')
-            """, (usuario_id, total, endereco))
+                INSERT INTO pedidos (cliente_id, total, valor_frete, endereco_entrega, status, metodo_pagamento)
+                VALUES (?, ?, ?, ?, 'Processando', 'Desconhecido')
+            """, (usuario_id, total, valor_frete, endereco))
+            
             pedido_id = cursor.lastrowid
 
             for item in itens_carrinho:
@@ -41,9 +44,9 @@ class PedidoRepository:
     def buscar_historico_cliente(self, cliente_id):
         conn = get_db_connection()
         try:
-            # ADICIONADO: codigo_rastreio no SELECT
+            # Trazemos o valor_frete no histórico
             query_pedidos = """
-                SELECT id, total, status, data_pedido, endereco_entrega, codigo_rastreio
+                SELECT id, total, valor_frete, status, data_pedido, endereco_entrega, codigo_rastreio
                 FROM pedidos 
                 WHERE cliente_id = ? 
                 ORDER BY id DESC
@@ -84,13 +87,9 @@ class PedidoRepository:
             conn.close()
 
     def atualizar_status(self, pedido_id, novo_status):
-        """
-        Atualiza status. Se for 'Enviado', gera código de rastreio.
-        """
         conn = get_db_connection()
         try:
             if novo_status == 'Enviado':
-                # Gera código ex: TR-A1B2C3D4
                 codigo = f"TR-{uuid.uuid4().hex[:8].upper()}"
                 conn.execute("""
                     UPDATE pedidos SET status = ?, codigo_rastreio = ? WHERE id = ?

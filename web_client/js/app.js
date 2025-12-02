@@ -1,13 +1,37 @@
 let carrinho = [];
 let token = localStorage.getItem('token');
 let usuario = JSON.parse(localStorage.getItem('usuario'));
+let produtosGlobais = [];
+let valorFreteAtual = 0; // Variável global para guardar o frete gerado
 
 document.addEventListener('DOMContentLoaded', () => {
     carregarCategorias(); // Carrega o select
     carregarProdutos(); 
     atualizarInterfaceAuth();
     atualizarContadorCarrinho();
+    // NOVO: Ouve alterações no campo Bairro para calcular frete
+    document.getElementById('end-bairro').addEventListener('blur', calcularFreteSimulado);
 });
+
+function calcularFreteSimulado() {
+    const rua = document.getElementById('end-rua').value;
+    const bairro = document.getElementById('end-bairro').value;
+
+    // Só calcula se tiver endereço preenchido
+    if (rua && bairro) {
+        // Simula cálculo: Entre 15.00 e 30.00
+        valorFreteAtual = (Math.random() * (30 - 15) + 15);
+        
+        // Atualiza a UI visualmente
+        const subtotal = parseFloat(document.getElementById('cart-subtotal').innerText);
+        atualizarTotaisUI(subtotal);
+        
+        // Feedback visual no campo de frete
+        const elFrete = document.getElementById('cart-frete');
+        elFrete.style.color = '#00ff00'; // Flash verde
+        setTimeout(() => elFrete.style.color = 'var(--accent-color)', 500);
+    }
+}
 
 // --- CATEGORIAS (NOVO) ---
 async function carregarCategorias() {
@@ -152,7 +176,6 @@ function limparFiltros() {
     carregarProdutos();
 }
 
-// --- MEUS PEDIDOS (ATUALIZADO COM BOTÃO CANCELAR) ---
 // --- MEUS PEDIDOS (ATUALIZADO COM RASTREIO) ---
 async function abrirMeusPedidos() {
     toggleProfile(); document.getElementById('modal-pedidos').classList.remove('hidden');
@@ -165,7 +188,9 @@ async function abrirMeusPedidos() {
             p.itens.forEach(i => {
                 const img = i.imagem_url ? `/uploads/${i.imagem_url}` : 'https://via.placeholder.com/50';
                 itensHtml += `<div style="display:flex;align-items:center;margin-top:10px;background:#252525;padding:5px;border-radius:4px;"><img src="${img}" style="width:40px;height:40px;object-fit:cover;margin-right:10px;"><div style="flex:1;">${i.nome}</div><div style="width:100px;text-align:right;">${i.quantidade}x R$ ${i.preco_unitario.toFixed(2)}</div></div>`;
+                
             });
+            
             
             // Lógica Rastreio e Cancelar
             let acoesHtml = '';
@@ -174,7 +199,7 @@ async function abrirMeusPedidos() {
             } else if (p.status === 'Enviado' && p.codigo_rastreio) {
                 acoesHtml = `<div style="margin-top:5px;padding:8px;background:#2a2a2a;border:1px dashed var(--accent-color);border-radius:4px;color:var(--accent-color);font-size:0.9rem;"><i class="fas fa-truck"></i> Rastreio: <strong>${p.codigo_rastreio}</strong></div>`;
             }
-
+            
             const div = document.createElement('div');
             div.style = "background:#1e1e1e;padding:15px;border-radius:8px;margin-bottom:20px;border:1px solid #333;";
             div.innerHTML = `
@@ -198,7 +223,6 @@ async function abrirMeusPedidos() {
 function getStatusColor(s) { if(s==='Enviado') return 'var(--success-color)'; if(s==='Cancelado') return 'var(--danger-color)'; return 'orange'; }
 async function cancelarPedido(id) { if(!confirm("Cancelar?")) return; try{ await api.put(`/web/pedidos/${id}/cancelar`); document.getElementById('modal-pedidos').classList.add('hidden'); abrirMeusPedidos(); } catch(e){ alert(e.message); } }
 function togglePedidos() { document.getElementById('modal-pedidos').classList.toggle('hidden'); }
-
 
 // Helper para cores de status
 function getStatusColor(status) {
@@ -233,41 +257,110 @@ function adicionarAoCarrinho(id, nome, preco) {
     const btn = document.getElementById('btn-cart');
     btn.style.color = 'var(--success-color)'; setTimeout(() => btn.style.color = '', 500);
 }
-function atualizarContadorCarrinho() { document.getElementById('cart-count').innerText = carrinho.reduce((acc, i) => acc + i.qtd, 0); }
+function atualizarContadorCarrinho() { 
+    document.getElementById('cart-count').innerText = carrinho.reduce((acc, i) => acc + i.qtd, 0); 
+}
 function renderizarCarrinho() {
-    const container = document.getElementById('cart-items'); container.innerHTML = '';
+    const container = document.getElementById('cart-items'); 
+    container.innerHTML = '';
+    
+    // Reseta frete visualmente se fechar e abrir
+    valorFreteAtual = 0; 
+    
     if (carrinho.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #777;">Vazio.</p>';
         document.getElementById('btn-checkout-start').style.display = 'none';
         document.getElementById('checkout-area').classList.add('hidden');
-        document.getElementById('cart-total').innerText = '0.00';
+        atualizarTotaisUI(0);
     } else {
         document.getElementById('btn-checkout-start').style.display = 'block';
-        let total = 0;
+        let subtotal = 0;
         carrinho.forEach((item, idx) => {
-            const sub = item.qtd * item.preco_unitario; total += sub;
+            const sub = item.qtd * item.preco_unitario; 
+            subtotal += sub;
             container.innerHTML += `<div class="cart-item"><span>${item.qtd}x ${item.nome}</span><div><span style="margin-right:10px;">R$ ${sub.toFixed(2)}</span><button onclick="removerDoCarrinho(${idx})" style="color:var(--danger-color); background:none; border:none; cursor:pointer;">&times;</button></div></div>`;
         });
-        document.getElementById('cart-total').innerText = total.toFixed(2);
+        atualizarTotaisUI(subtotal);
     }
 }
-function removerDoCarrinho(i) { carrinho.splice(i, 1); renderizarCarrinho(); atualizarContadorCarrinho(); }
+function atualizarTotaisUI(subtotal) {
+    document.getElementById('cart-subtotal').innerText = subtotal.toFixed(2);
+    document.getElementById('cart-frete').innerText = valorFreteAtual.toFixed(2);
+    const totalFinal = subtotal + valorFreteAtual;
+    document.getElementById('cart-total-final').innerText = totalFinal.toFixed(2);
+}
+function removerDoCarrinho(i) { 
+    carrinho.splice(i, 1); 
+    renderizarCarrinho(); 
+    atualizarContadorCarrinho(); 
+}
 async function iniciarCheckout() {
     if (!token) { alert("Faça login."); toggleCart(); toggleLogin(); return; }
+    
     document.getElementById('checkout-area').classList.remove('hidden');
     document.getElementById('btn-checkout-start').classList.add('hidden');
-    try { const p = await api.get('/web/perfil'); if (p.endereco) { document.getElementById('end-rua').value = p.endereco.rua || ''; document.getElementById('end-num').value = p.endereco.numero || ''; document.getElementById('end-bairro').value = p.endereco.bairro || ''; } } catch(e){}
+    
+    // Tenta carregar endereço salvo
+    try { 
+        const p = await api.get('/web/perfil'); 
+        if (p.endereco) { 
+            document.getElementById('end-rua').value = p.endereco.rua || ''; 
+            document.getElementById('end-num').value = p.endereco.numero || ''; 
+            document.getElementById('end-bairro').value = p.endereco.bairro || ''; 
+            
+            // Se já tem endereço, calcula frete na hora!
+            if(p.endereco.bairro) calcularFreteSimulado();
+        } 
+    } catch(e){}
 }
-function togglePagamento() { const m = document.querySelector('input[name="pagamento"]:checked').value; document.getElementById('div-cartao').classList.toggle('hidden', m !== 'cartao'); }
+
+function togglePagamento() { 
+    const m = document.querySelector('input[name="pagamento"]:checked').value; 
+    document.getElementById('div-cartao').classList.toggle('hidden', m !== 'cartao'); 
+}
 async function finalizarCompra() {
-    const rua = document.getElementById('end-rua').value; const num = document.getElementById('end-num').value; const bairro = document.getElementById('end-bairro').value;
+    const rua = document.getElementById('end-rua').value; 
+    const num = document.getElementById('end-num').value; 
+    const bairro = document.getElementById('end-bairro').value;
+    
     if (!rua || !num || !bairro) { alert("Endereço obrigatório!"); return; }
-    const metodo = document.querySelector('input[name="pagamento"]:checked').value; const dadosPag = {};
-    if (metodo === 'cartao') { const card = document.getElementById('pag-cartao-num').value; if (!card || card.length < 13) { alert("Cartão inválido."); return; } dadosPag.numero_cartao = card; }
-    const total = parseFloat(document.getElementById('cart-total').innerText);
-    const payload = { itens: carrinho, total, endereco: { rua, numero: num, bairro }, metodo_pagamento: metodo, dados_pagamento: dadosPag };
-    const btn = document.querySelector('#checkout-area button'); btn.innerText = "Processando..."; btn.disabled = true;
-    try { const res = await api.post('/web/checkout', payload); alert(`Confirmado!\nID: ${res.pedido_id}`); carrinho = []; toggleCart(); atualizarContadorCarrinho(); carregarProdutos(); } catch (e) { alert(`Erro: ${e.message}`); } finally { btn.innerText = "FINALIZAR PEDIDO"; btn.disabled = false; }
+    
+    const metodo = document.querySelector('input[name="pagamento"]:checked').value; 
+    const dadosPag = {};
+    if (metodo === 'cartao') { 
+        const card = document.getElementById('pag-cartao-num').value; 
+        if (!card || card.length < 13) { alert("Cartão inválido."); return; } 
+        dadosPag.numero_cartao = card; 
+    }
+    
+    const totalFinal = parseFloat(document.getElementById('cart-total-final').innerText);
+    
+    const payload = { 
+        itens: carrinho, 
+        total: totalFinal, // Envia o total JÁ COM FRETE
+        valor_frete: valorFreteAtual, // Envia o frete separado para registro
+        endereco: { rua, numero: num, bairro }, 
+        metodo_pagamento: metodo, 
+        dados_pagamento: dadosPag 
+    };
+    
+    const btn = document.querySelector('#checkout-area button'); 
+    btn.innerText = "Processando..."; 
+    btn.disabled = true;
+
+    try { 
+        const res = await api.post('/web/checkout', payload); 
+        alert(`Pedido Confirmado!\nID: ${res.pedido_id}\nFrete: R$ ${valorFreteAtual.toFixed(2)}`); 
+        carrinho = []; 
+        toggleCart(); 
+        atualizarContadorCarrinho(); 
+        carregarProdutos(); 
+    } catch (e) { 
+        alert(`Erro: ${e.message}`); 
+    } finally { 
+        btn.innerText = "FINALIZAR PEDIDO"; 
+        btn.disabled = false; 
+    }
 }
 async function fazerLogin() {
     // Se o evento foi passado (ex: clique de botão ou enter), previne o refresh
@@ -340,3 +433,12 @@ function toggleProfile() { const m = document.getElementById('modal-profile'); m
 function toggleCart() { const m = document.getElementById('modal-cart'); m.classList.toggle('hidden'); if(!m.classList.contains('hidden')) renderizarCarrinho(); }
 function alternarParaCadastro() { toggleLogin(); toggleCadastro(); }
 function alternarParaLogin() { toggleCadastro(); toggleLogin(); }
+async function carregarProdutos(f={}){
+    const g=document.getElementById('product-list');g.innerHTML='Loading...';
+    const p=new URLSearchParams(f).toString();
+    try{const r=await api.get(`/web/produtos?${p}`);
+    produtosGlobais=r;g.innerHTML='';if(r.length===0){g.innerHTML='Nada.';return}r.forEach(x=>{const c=document.createElement('div');
+        c.className='product-card';
+        const im=x.imagem_url?`/uploads/${x.imagem_url}`:null;const tag=im?`<img src="${im}" onerror="this.src='https://via.placeholder.com/150'">`:`<img src="https://via.placeholder.com/150">`;
+        c.innerHTML=`<div onclick="abrirDetalhesProduto(${x.id})" style="cursor:pointer">${tag}<h3>${x.nome}</h3></div><div class="price">R$ ${x.preco.toFixed(2)}</div><button class="btn-add" ${x.estoque>0?'':'disabled style="background:#555"'} onclick="adicionarAoCarrinho(${x.id},'${x.nome.replace(/'/g,"\\'")}',${x.preco})">${x.estoque>0?'Adicionar':'Indisponível'}</button>`;g.appendChild(c)})}catch(e){g.innerHTML=e.message}}
+

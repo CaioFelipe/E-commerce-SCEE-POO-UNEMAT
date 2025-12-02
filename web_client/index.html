@@ -166,25 +166,43 @@
         <div class="modal-content" style="max-width: 600px;">
             <button class="close-btn" onclick="toggleCart()">&times;</button>
             <h2>Seu Carrinho</h2>
-            <div id="cart-items" style="max-height: 200px; overflow-y: auto; border-bottom: 1px solid #444;"></div>
-            <div style="display: flex; justify-content: space-between; margin: 15px 0;">
-                <span>Total:</span><span style="font-weight: bold; color: var(--success-color);">R$ <span id="cart-total">0.00</span></span>
+            
+            <div id="cart-items" style="max-height: 200px; overflow-y: auto; border-bottom: 1px solid #444; margin-bottom: 15px;"></div>
+            
+            <!-- RESUMO DE VALORES (ATUALIZADO) -->
+            <div style="background: #252525; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #aaa;">Subtotal:</span>
+                    <span>R$ <span id="cart-subtotal">0.00</span></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #aaa;">Frete Estimado:</span>
+                    <span style="color: var(--accent-color);">+ R$ <span id="cart-frete">0.00</span></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #444; padding-top: 5px; font-weight: bold;">
+                    <span style="font-size: 1.1rem;">Total Final:</span>
+                    <span style="font-size: 1.3rem; color: var(--success-color);">R$ <span id="cart-total-final">0.00</span></span>
+                </div>
             </div>
             
             <div id="checkout-area" class="hidden">
                 <hr style="border-color: #444; margin: 10px 0;">
+                
                 <h4>Endereço de Entrega</h4>
                 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 10px;">
+                    <!-- Adicionado onchange para recalcular frete se mudar endereço (opcional, aqui simularemos ao abrir) -->
                     <input type="text" id="end-rua" placeholder="Rua" required>
                     <input type="number" id="end-num" placeholder="Nº" required>
                 </div>
                 <input type="text" id="end-bairro" placeholder="Bairro" required style="margin-bottom: 10px;">
+                
                 <h4>Pagamento</h4>
                 <div style="display: flex; gap: 15px; margin-bottom: 10px;">
                     <label><input type="radio" name="pagamento" value="pix" checked onchange="togglePagamento()"> PIX</label>
                     <label><input type="radio" name="pagamento" value="cartao" onchange="togglePagamento()"> Cartão</label>
                 </div>
                 <div id="div-cartao" class="hidden"><input type="text" id="pag-cartao-num" placeholder="Número do Cartão"></div>
+                
                 <button class="btn-add" style="background-color: var(--success-color); color: #000; margin-top: 10px;" onclick="finalizarCompra()">FINALIZAR PEDIDO</button>
             </div>
             <button id="btn-checkout-start" class="btn-add" onclick="iniciarCheckout()">Ir para Pagamento</button>
