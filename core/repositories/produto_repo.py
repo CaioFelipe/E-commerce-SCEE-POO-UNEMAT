@@ -4,48 +4,58 @@ from core.models.produto import Produto
 class ProdutoRepository:
     def listar_todos(self, filtros=None):
         conn = get_db_connection()
-        query = "SELECT * FROM produtos WHERE 1=1"
+        # Faz JOIN com categorias para mostrar o nome da categoria na lista
+        query = """
+            SELECT p.*, c.nome as categoria_nome 
+            FROM produtos p
+            LEFT JOIN categorias c ON p.categoria_id = c.id
+            WHERE 1=1
+        """
         params = []
 
         if filtros:
-            # Filtro por Categoria (NOVO)
+            # Filtro por Categoria
             if 'categoria_id' in filtros and filtros['categoria_id']:
-                query += " AND categoria_id = ?"
+                query += " AND p.categoria_id = ?"
                 params.append(int(filtros['categoria_id']))
 
+            # Filtro por Texto (Nome, Descrição ou SKU)
             if 'termo' in filtros and filtros['termo']:
-                query += " AND (nome LIKE ? OR descricao LIKE ?)"
+                query += " AND (p.nome LIKE ? OR p.descricao LIKE ? OR p.sku LIKE ?)"
                 termo = f"%{filtros['termo']}%"
-                params.extend([termo, termo])
+                params.extend([termo, termo, termo])
 
+            # Filtros de Preço
             if 'min_price' in filtros and filtros['min_price']:
-                query += " AND preco >= ?"
+                query += " AND p.preco >= ?"
                 params.append(float(filtros['min_price']))
-
             if 'max_price' in filtros and filtros['max_price']:
-                query += " AND preco <= ?"
+                query += " AND p.preco <= ?"
                 params.append(float(filtros['max_price']))
 
-        query += " ORDER BY nome ASC"
+        query += " ORDER BY p.nome ASC"
 
         rows = conn.execute(query, params).fetchall()
         conn.close()
         return [dict(row) for row in rows]
 
     def listar_categorias(self):
-        """Retorna todas as categorias para preencher o select no frontend."""
         conn = get_db_connection()
         rows = conn.execute("SELECT * FROM categorias ORDER BY nome").fetchall()
         conn.close()
         return [dict(row) for row in rows]
 
-    # ... (buscar_por_id e salvar mantêm-se iguais, se precisares, copia do anterior) ...
     def buscar_por_id(self, id):
         conn = get_db_connection()
         row = conn.execute("SELECT * FROM produtos WHERE id = ?", (id,)).fetchone()
         conn.close()
         if row:
-            return Produto(row['id'], row['sku'], row['nome'], row['preco'], row['estoque'])
+            # Retorna objeto Produto padrão (sem campos extras do join para edição)
+            prod = Produto(row['id'], row['sku'], row['nome'], row['preco'], row['estoque'])
+            prod.descricao = row['descricao']
+            prod.imagem_url = row['imagem_url']
+            prod.categoria_id = row['categoria_id']
+            return prod
         return None
 
     def salvar(self, produto):

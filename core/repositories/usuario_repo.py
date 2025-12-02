@@ -100,3 +100,19 @@ class UsuarioRepository:
             raise e
         finally:
             conn.close()
+    
+    def listar_clientes(self):
+        """Retorna todos os usuários do tipo 'cliente'."""
+        conn = get_db_connection()
+        try:
+            query = """
+                SELECT u.id, u.nome_completo, u.email, u.data_cadastro, c.cpf
+                FROM usuarios u
+                LEFT JOIN clientes_info c ON u.id = c.usuario_id
+                WHERE u.tipo = 'cliente'
+                ORDER BY u.nome_completo
+            """
+            rows = conn.execute(query).fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()

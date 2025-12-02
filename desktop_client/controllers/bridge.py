@@ -100,3 +100,47 @@ class BridgeController:
                 return False, erro_msg
         except Exception as e:
             return False, str(e)
+
+    def listar_clientes(self):
+        try:
+            response = requests.get(f"{self.BASE_URL}/clientes", headers=self._get_headers())
+            return response.json() if response.status_code == 200 else []
+        except: return []
+
+    def listar_pedidos_cliente(self, cliente_id):
+        try:
+            response = requests.get(f"{self.BASE_URL}/clientes/{cliente_id}/pedidos", headers=self._get_headers())
+            return response.json() if response.status_code == 200 else []
+        except: return []
+
+    def listar_categorias(self):
+        try:
+            response = requests.get(f"{self.BASE_URL}/categorias", headers=self._get_headers())
+            return response.json() if response.status_code == 200 else []
+        except: return []
+
+    def listar_produtos(self, filtros=None):
+        try:
+            params = filtros if filtros else {}
+            response = requests.get(f"{self.BASE_URL}/produtos", headers=self._get_headers(), params=params)
+            return response.json() if response.status_code == 200 else []
+        except: return []
+
+    def atualizar_produto(self, produto_id, dados):
+        try:
+            url = f"{self.BASE_URL}/produtos/{produto_id}"
+            response = requests.put(url, json=dados, headers=self._get_headers())
+            return response.status_code == 200, response.json().get('mensagem', 'Erro')
+        except Exception as e: return False, str(e)
+
+    def obter_pedido(self, pedido_id):
+        """Busca os detalhes completos (incluindo itens) de um pedido."""
+        try:
+            url = f"{self.BASE_URL}/pedidos/{pedido_id}"
+            response = requests.get(url, headers=self._get_headers())
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"Erro bridge: {e}")
+            return None

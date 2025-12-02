@@ -9,7 +9,6 @@ class PedidoRepository:
         try:
             conn.execute("BEGIN TRANSACTION;")
             
-            # Agora salvamos também o valor_frete
             cursor.execute("""
                 INSERT INTO pedidos (cliente_id, total, valor_frete, endereco_entrega, status, metodo_pagamento)
                 VALUES (?, ?, ?, ?, 'Processando', 'Desconhecido')
@@ -41,10 +40,59 @@ class PedidoRepository:
         finally:
             conn.close()
 
+    def listar_todos(self):
+        """Lista resumo para a tabela principal do Admin."""
+        conn = get_db_connection()
+        try:
+            # ADICIONADO: valor_frete e codigo_rastreio
+            query = """
+                SELECT p.id, p.total, p.valor_frete, p.status, p.endereco_entrega, p.data_pedido, p.codigo_rastreio,
+                       u.nome_completo as cliente_nome
+                FROM pedidos p
+                JOIN usuarios u ON p.cliente_id = u.id
+                ORDER BY p.id DESC
+            """
+            rows = conn.execute(query).fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
+    def buscar_por_id_com_itens(self, pedido_id):
+        """
+        NOVO: Retorna o pedido completo com a lista de itens.
+        Usado para o modal de detalhes.
+        """
+        conn = get_db_connection()
+        try:
+            # 1. Dados do Pedido
+            query_pedido = """
+                SELECT p.*, u.nome_completo as cliente_nome, u.email as cliente_email
+                FROM pedidos p
+                JOIN usuarios u ON p.cliente_id = u.id
+                WHERE p.id = ?
+            """
+            row = conn.execute(query_pedido, (pedido_id,)).fetchone()
+            if not row: return None
+            
+            pedido = dict(row)
+
+            # 2. Itens do Pedido
+            query_itens = """
+                SELECT ip.quantidade, ip.preco_unitario, pr.nome, pr.sku
+                FROM itens_pedido ip
+                JOIN produtos pr ON ip.produto_id = pr.id
+                WHERE ip.pedido_id = ?
+            """
+            rows_itens = conn.execute(query_itens, (pedido_id,)).fetchall()
+            pedido['itens'] = [dict(i) for i in rows_itens]
+            
+            return pedido
+        finally:
+            conn.close()
+
     def buscar_historico_cliente(self, cliente_id):
         conn = get_db_connection()
         try:
-            # Trazemos o valor_frete no histórico
             query_pedidos = """
                 SELECT id, total, valor_frete, status, data_pedido, endereco_entrega, codigo_rastreio
                 FROM pedidos 
@@ -65,24 +113,6 @@ class PedidoRepository:
                 p['itens'] = [dict(i) for i in itens_rows]
             
             return pedidos
-        except Exception as e:
-            print(f"Erro no Repo Pedido: {e}")
-            raise e
-        finally:
-            conn.close()
-
-    def listar_todos(self):
-        conn = get_db_connection()
-        try:
-            query = """
-                SELECT p.id, p.total, p.status, p.endereco_entrega, p.data_pedido, p.codigo_rastreio,
-                       u.nome_completo as cliente_nome
-                FROM pedidos p
-                JOIN usuarios u ON p.cliente_id = u.id
-                ORDER BY p.id DESC
-            """
-            rows = conn.execute(query).fetchall()
-            return [dict(row) for row in rows]
         finally:
             conn.close()
 
@@ -96,11 +126,9 @@ class PedidoRepository:
                 """, (novo_status, codigo, pedido_id))
             else:
                 conn.execute("UPDATE pedidos SET status = ? WHERE id = ?", (novo_status, pedido_id))
-            
             conn.commit()
             return True
-        except Exception as e:
-            print(f"Erro ao atualizar status: {e}")
+        except Exception:
             return False
         finally:
             conn.close()
