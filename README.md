@@ -1,81 +1,89 @@
 # **SCEE \- Sistema de Comércio Eletrônico de Eletrônicos**
 
-O **SCEE** é uma plataforma híbrida de e-commerce desenvolvida em Python, focada em eficiência operacional e vendas. O sistema utiliza uma arquitetura moderna separando o núcleo (Backend) das interfaces de consumo (Web e Desktop).
+O **SCEE** é uma plataforma completa de e-commerce desenvolvida em Python, focada em eficiência operacional e vendas. O sistema utiliza uma arquitetura híbrida de 3 camadas, separando o núcleo (Backend) das interfaces de consumo (Web para Clientes e Desktop para Gestão).
 
-## **🚀 Arquitetura**
+## **🚀 Destaques Técnicos**
 
-O sistema segue o padrão de **3 Camadas** com uma abordagem de API RESTful:
+O projeto foi construído seguindo rigorosamente os princípios de Engenharia de Software e POO:
 
-1. **Backend (Core & API):**  
-   * Linguagem: Python 3.10+  
-   * Framework Web: Flask (Expondo JSON via Blueprints)  
-   * Banco de Dados: SQLite (Com Transações Atômicas)  
-   * Segurança: JWT (JSON Web Token) e Argon2 (Hash de Senha)  
-   * Destaques: Polimorfismo em Usuários e Pagamentos, Transações ACID.  
-2. **Frontend Web (Cliente Final \- Carlos):**  
-   * Tecnologia: HTML5, CSS3 (Dark Mode), JavaScript (Vanilla ES6+).  
-   * Responsabilidade: Catálogo, Carrinho de Compras e Checkout.  
-3. **Frontend Desktop (Gestão \- Ana):**  
-   * Tecnologia: Python Tkinter.  
-   * Responsabilidade: CRUD de Produtos, Upload de Imagens, Gestão de Pedidos.
+* **Arquitetura Híbrida:** Backend Flask servindo API REST para um Frontend Web (JS Vanilla) e um Cliente Desktop (Tkinter).  
+* **Polimorfismo:** Implementado na autenticação (Cliente vs Admin) e no Pagamento (Pix vs Cartão via Strategy Pattern).  
+* **Transações ACID:** O checkout garante integridade atômica entre criação do pedido, baixa de estoque e registro financeiro.  
+* **Segurança:** Hash de senhas com Argon2 e autenticação stateless via JWT.  
+* **Persistência:** SQLite com chaves estrangeiras e integridade referencial ativadas.
 
-## **🛠️ Pré-requisitos**
+## **🛠️ Tecnologias Utilizadas**
 
-* Python 3.10 ou superior instalado.  
-* Navegador Web Moderno (Chrome, Firefox, Edge).
+* **Backend:** Python 3.10+, Flask, SQLite3.  
+* **Frontend Web:** HTML5, CSS3 (Dark Mode), JavaScript (ES6+), Fetch API.  
+* **Desktop Client:** Python Tkinter (MVC Pattern).  
+* **Bibliotecas:** flask-cors, argon2-cffi, PyJWT, requests.
 
-## **📦 Instalação**
+## **📦 Instalação e Configuração**
 
-1. **Clone o repositório** (ou extraia os arquivos):  
-   git clone \[https://github.com/seu-usuario/scee.git\](https://github.com/seu-usuario/scee.git)  
-   cd scee
+### **1\. Preparar o Ambiente**
 
-2. **Crie um Ambiente Virtual (Recomendado):**  
-   * *Windows:* python \-m venv venv  
-   * *Linux/Mac:* python3 \-m venv venv  
-3. **Ative o Ambiente Virtual:**  
-   * *Windows:* venv\\Scripts\\activate  
-   * *Linux/Mac:* source venv/bin/activate  
-4. **Instale as dependências:**  
-   pip install \-r requirements.txt
+Clone o repositório e crie um ambiente virtual:
 
-5. **Configure o Ambiente:**  
-   * Renomeie o arquivo config.example.py para config.py.  
-   * (Opcional) Edite a SECRET\_KEY dentro dele.  
-6. Inicialize o Banco de Dados:  
-   Execute o script que cria as tabelas e o usuário admin inicial.  
-   python database\_setup.py
+\# Windows  
+python \-m venv venv  
+venv\\Scripts\\activate
 
-   *Isso criará o arquivo scee\_loja.db na raiz.*
+\# Linux/Mac  
+python3 \-m venv venv  
+source venv/bin/activate
 
-## **▶️ Como Rodar**
+### **2\. Instalar Dependências**
 
-### **1\. Iniciar o Servidor (Backend)**
+pip install \-r requirements.txt
 
-Mantenha este terminal aberto. O servidor deve rodar para que os clientes funcionem.
+### **3\. Configurar Banco de Dados**
+
+Execute os scripts para criar as tabelas e popular com dados de teste:
+
+\# Cria as tabelas e o usuário Admin  
+python database\_setup.py
+
+\# Insere produtos e categorias de exemplo  
+python run\_seed.py
+
+## **▶️ Como Executar**
+
+O sistema precisa que o **Servidor (Backend)** esteja rodando para que as interfaces funcionem.
+
+### **Passo 1: Iniciar o Servidor (Backend)**
+
+Abra um terminal e execute:
 
 python main.py
 
-*O servidor iniciará em http://127.0.0.1:5000.*
+*O servidor ficará online em http://127.0.0.1:5000.*
 
-### **2\. Acessar a Loja Web (Cliente)**
+### **Passo 2: Acessar a Loja (Cliente)**
 
-* Navegue até a pasta web\_client.  
+* Vá até a pasta web\_client.  
 * Abra o arquivo index.html no seu navegador.  
-* *Nota:* Para login, você pode criar um cliente via API ou usar o admin para testes iniciais.
+* **Funcionalidades:** Cadastro, Login, Busca, Filtros, Carrinho, Checkout, Histórico de Pedidos.
 
-### **3\. Acessar a Gestão (Desktop)**
+### **Passo 3: Acessar a Gestão (Desktop)**
 
-Abra um **novo terminal**, ative o ambiente virtual e execute:
+Abra um **novo terminal** (com o venv ativado) e execute:
 
 python \-m desktop\_client.main\_app
 
-* **Login Padrão (Criado pelo database\_setup.py):**  
-  * E-mail: ana@scee.com  
-  * Senha: admin123 (Nota: Em produção, o hash seria verificado, no setup inicial usamos placeholder ou hash real se implementado).
+* **Login de Administrador:**  
+  * **E-mail:** ana@scee.com  
+  * **Senha:** admin123  
+* **Funcionalidades:** Dashboard de Pedidos, Detalhes com Itens, Alteração de Status (Rastreio), Cadastro/Edição de Produtos, Upload de Imagens, Listagem de Clientes.
 
-## **📚 Funcionalidades Chave**
+## **📂 Estrutura do Projeto**
 
-* **Polimorfismo:** Usuários (Cliente/Admin) e Pagamentos (Pix/Cartão) comportam-se de forma distinta usando a mesma interface.  
-* **Transação Atômica:** O checkout garante que o pedido só é criado se o estoque for baixado com sucesso.  
-* **JWT:** Autenticação stateless segura entre Desktop e Web.
+* /api: Rotas (Endpoints) separadas por contexto (Web vs Gestão).  
+* /core: O coração do sistema. Contém Models (Regras de Negócio) e Repositories (SQL).  
+* /services: Camada de orquestração (Regras de Aplicação).  
+* /web\_client: Interface do cliente (SPA).  
+* /desktop\_client: Interface da gestão (Tkinter).
+
+## **📄 Licença**
+
+Este projeto foi desenvolvido para fins educacionais da disciplina de POO.
