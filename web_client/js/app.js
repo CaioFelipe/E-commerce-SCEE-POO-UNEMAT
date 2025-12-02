@@ -90,10 +90,7 @@ function limparFiltros() {
     carregarProdutos();
 }
 
-// ... (O RESTO DO CÓDIGO PERMANECE IGUAL: MEUS PEDIDOS, CARRINHO, AUTH) ...
-// Copia o resto do código anterior do app.js para aqui (abrirMeusPedidos, adicionarAoCarrinho, etc.)
-// Para garantir que tens tudo, aqui vai o bloco de "MEUS PEDIDOS" para baixo:
-
+// --- MEUS PEDIDOS (ATUALIZADO COM BOTÃO CANCELAR) ---
 async function abrirMeusPedidos() {
     toggleProfile(); 
     const modal = document.getElementById('modal-pedidos');
@@ -107,11 +104,12 @@ async function abrirMeusPedidos() {
         container.innerHTML = '';
 
         if (pedidos.length === 0) {
-            container.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+            container.innerHTML = '<p>Você ainda não fez nenhum pedido.</p>';
             return;
         }
 
         pedidos.forEach(p => {
+            // Renderiza Itens
             let htmlItens = '';
             p.itens.forEach(item => {
                 const img = item.imagem_url ? `/uploads/${item.imagem_url}` : 'https://via.placeholder.com/50';
@@ -124,6 +122,18 @@ async function abrirMeusPedidos() {
                 `;
             });
 
+            // Lógica do Botão Cancelar (Aparece apenas se status for Processando)
+            let btnCancelarHtml = '';
+            if (p.status === 'Processando') {
+                btnCancelarHtml = `
+                    <button onclick="cancelarPedido(${p.id})" 
+                            style="background-color: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 5px;">
+                        <i class="fas fa-times"></i> Cancelar Pedido
+                    </button>
+                `;
+            }
+
+            // Renderiza Card do Pedido
             const divPedido = document.createElement('div');
             divPedido.style = "background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333;";
             divPedido.innerHTML = `
@@ -131,8 +141,12 @@ async function abrirMeusPedidos() {
                     <span style="color: var(--accent-color); font-weight: bold;">Pedido #${p.id}</span>
                     <span style="color: #aaa;">${p.data_pedido}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Status: <strong style="color: ${p.status === 'Enviado' ? 'var(--success-color)' : 'orange'}">${p.status}</strong></span>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span>Status: <strong style="color: ${getStatusColor(p.status)}">${p.status}</strong></span>
+                        <br>
+                        ${btnCancelarHtml}
+                    </div>
                     <span>Total: <strong style="font-size: 1.2rem;">R$ ${p.total.toFixed(2)}</strong></span>
                 </div>
                 <div style="margin-top: 10px;">
@@ -148,6 +162,29 @@ async function abrirMeusPedidos() {
 
     } catch (e) {
         container.innerHTML = `<p style="color: red;">Erro: ${e.message}</p>`;
+    }
+}
+
+// Helper para cores de status
+function getStatusColor(status) {
+    if (status === 'Enviado') return 'var(--success-color)';
+    if (status === 'Cancelado') return 'var(--danger-color)';
+    return 'orange'; // Processando
+}
+
+// Função chamada pelo botão
+async function cancelarPedido(id) {
+    if (!confirm("Tem certeza que deseja cancelar este pedido?")) return;
+
+    try {
+        const res = await api.put(`/web/pedidos/${id}/cancelar`);
+        alert(res.mensagem);
+        
+        // Fecha e reabre o modal para atualizar a lista
+        document.getElementById('modal-pedidos').classList.add('hidden');
+        abrirMeusPedidos(); 
+    } catch (e) {
+        alert(`Erro ao cancelar: ${e.message}`);
     }
 }
 

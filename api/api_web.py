@@ -102,3 +102,37 @@ def atualizar_perfil(current_user):
         return jsonify({'mensagem': 'Perfil atualizado com sucesso!'}), 200
     except Exception as e:
         return jsonify({'erro': str(e)}), 500
+
+@api_web_bp.route('/pedidos/<int:pedido_id>/cancelar', methods=['PUT'])
+@token_required
+def cancelar_pedido_cliente(current_user, pedido_id):
+    """
+    Permite ao cliente cancelar seu próprio pedido se estiver 'Processando'.
+    """
+    repo = PedidoRepository()
+    
+    try:
+        # 1. Verifica se o pedido pertence ao usuário e qual o status atual
+        # Buscamos no histórico do cliente para garantir a propriedade (Segurança)
+        historico = repo.buscar_historico_cliente(current_user.id)
+        
+        # Procura o pedido específico na lista
+        pedido_alvo = next((p for p in historico if p['id'] == pedido_id), None)
+        
+        if not pedido_alvo:
+            return jsonify({'erro': 'Pedido não encontrado ou não pertence a você.'}), 404
+            
+        if pedido_alvo['status'] != 'Processando':
+            return jsonify({'erro': 'Apenas pedidos em processamento podem ser cancelados.'}), 400
+
+        # 2. Atualiza o status
+        # Nota: Em um sistema real, aqui devolveríamos os itens ao estoque (repo.estornar_estoque)
+        sucesso = repo.atualizar_status(pedido_id, 'Cancelado')
+        
+        if sucesso:
+            return jsonify({'mensagem': 'Pedido cancelado com sucesso.'}), 200
+        else:
+            return jsonify({'erro': 'Erro ao atualizar status.'}), 500
+
+    except Exception as e:
+        return jsonify({'erro': str(e)}), 500
