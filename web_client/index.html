@@ -9,190 +9,136 @@
 </head>
 <body>
 
-    <!-- CABEÇALHO -->
     <header>
         <div class="brand">
             <h1><i class="fas fa-microchip"></i> SCEE Store</h1>
         </div>
         <nav>
             <span id="user-display" class="hidden" style="margin-right: 15px; font-size: 0.9rem; color: var(--text-secondary);"></span>
-            
-            <button id="btn-login" onclick="toggleLogin()">
-                <i class="fas fa-sign-in-alt"></i> Entrar
-            </button>
-            
-            <!-- Botão Meu Perfil (Novo) -->
-            <button id="btn-profile" class="hidden" onclick="toggleProfile()">
-                <i class="fas fa-user-circle"></i> Meu Perfil
-            </button>
-
-            <button id="btn-cart" onclick="toggleCart()">
-                <i class="fas fa-shopping-cart"></i> Carrinho (<span id="cart-count">0</span>)
-            </button>
-            
-            <button id="btn-logout" class="hidden" onclick="logout()" style="border-color: var(--danger-color); color: var(--danger-color);">
-                <i class="fas fa-sign-out-alt"></i> Sair
-            </button>
+            <button id="btn-login" onclick="toggleLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            <button id="btn-profile" class="hidden" onclick="toggleProfile()"><i class="fas fa-user-circle"></i> Meu Perfil</button>
+            <button id="btn-cart" onclick="toggleCart()"><i class="fas fa-shopping-cart"></i> Carrinho (<span id="cart-count">0</span>)</button>
+            <button id="btn-logout" class="hidden" onclick="logout()" style="color: var(--danger-color);"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </nav>
     </header>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <main class="container">
-        <div class="catalog-header" style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-            <h2>Destaques em Hardware</h2>
-            <p style="color: var(--text-secondary);">Os melhores componentes para o seu setup.</p>
+        <!-- BARRA DE FILTROS (ATUALIZADA) -->
+        <div class="filters-bar" style="background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+            <h4 style="margin: 0; color: var(--accent-color);"><i class="fas fa-filter"></i> Filtros:</h4>
+            
+            <!-- NOVO: Select de Categoria -->
+            <select id="filter-categoria" style="padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2d2d2d; color: white;">
+                <option value="">Todas as Categorias</option>
+                <!-- Opções carregadas via JS -->
+            </select>
+
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <input type="number" id="filter-min" placeholder="Min R$" style="width: 80px; padding: 8px;">
+                <span style="color: #fff;">até</span>
+                <input type="number" id="filter-max" placeholder="Max R$" style="width: 80px; padding: 8px;">
+            </div>
+
+            <input type="text" id="filter-busca" placeholder="Buscar por nome..." style="width: 200px; padding: 8px;">
+
+            <button class="btn-add" onclick="aplicarFiltros()" style="width: auto; margin: 0; padding: 8px 15px;">Aplicar</button>
+            <button onclick="limparFiltros()" style="background: none; border: 1px solid #444; color: #aaa; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Limpar</button>
         </div>
 
         <div id="product-list" class="product-grid">
-            <p style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                Carregando catálogo de produtos...
-            </p>
+            <p style="grid-column: 1/-1; text-align: center;">Carregando catálogo...</p>
         </div>
     </main>
 
-    <!-- MODAL DE LOGIN -->
+    <!-- MODAIS (Login, Cadastro, Carrinho mantêm-se) -->
+    <!-- [MODAL LOGIN - Igual ao anterior] -->
     <div id="modal-login" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="close-btn" onclick="toggleLogin()">&times;</button>
             <h2>Acessar Conta</h2>
-            <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" id="login-email" placeholder="seu@email.com">
-            </div>
-            <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="login-pass" placeholder="Sua senha">
-            </div>
+            <div class="form-group"><label>E-mail</label><input type="email" id="login-email"></div>
+            <div class="form-group"><label>Senha</label><input type="password" id="login-pass"></div>
             <button class="btn-add" onclick="fazerLogin()">Entrar</button>
-            <p id="login-error" style="color: var(--danger-color); margin-top: 10px; font-size: 0.9rem; text-align: center; min-height: 20px;"></p>
-            <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; border-top: 1px solid #333; padding-top: 15px;">
-                Não tem conta? <a href="#" onclick="alternarParaCadastro()" style="color: var(--accent-color); text-decoration: none;">Cadastre-se grátis</a>
-            </div>
+            <p id="login-error" style="color: var(--danger-color); margin-top: 10px; text-align: center;"></p>
+            <div style="margin-top: 15px; text-align: center;"><a href="#" onclick="alternarParaCadastro()" style="color: var(--accent-color);">Cadastre-se grátis</a></div>
         </div>
     </div>
 
-    <!-- MODAL DE CADASTRO (Atualizado com Confirmação de Senha) -->
+    <!-- [MODAL CADASTRO - Igual ao anterior] -->
     <div id="modal-cadastro" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="close-btn" onclick="toggleCadastro()">&times;</button>
             <h2>Criar Conta</h2>
-            
-            <div class="form-group">
-                <label>Nome Completo</label>
-                <input type="text" id="cad-nome" placeholder="Ex: Carlos Silva">
-            </div>
-
-            <div class="form-group">
-                <label>CPF (Apenas números)</label>
-                <input type="text" id="cad-cpf" placeholder="000.000.000-00">
-            </div>
-            
-            <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" id="cad-email" placeholder="seu@email.com">
-            </div>
-            
-            <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="cad-senha" placeholder="Escolha uma senha forte">
-            </div>
-            
-            <!-- Campo Novo -->
-            <div class="form-group">
-                <label>Confirmar Senha</label>
-                <input type="password" id="cad-senha-conf" placeholder="Repita a senha">
-            </div>
-
+            <div class="form-group"><label>Nome</label><input type="text" id="cad-nome"></div>
+            <div class="form-group"><label>CPF</label><input type="text" id="cad-cpf"></div>
+            <div class="form-group"><label>E-mail</label><input type="email" id="cad-email"></div>
+            <div class="form-group"><label>Senha</label><input type="password" id="cad-senha"></div>
+            <div class="form-group"><label>Confirmar</label><input type="password" id="cad-senha-conf"></div>
             <button class="btn-add" onclick="fazerCadastro()">Cadastrar</button>
-            <p id="cad-error" style="color: var(--danger-color); margin-top: 10px; font-size: 0.9rem; text-align: center; min-height: 20px;"></p>
-            <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; border-top: 1px solid #333; padding-top: 15px;">
-                Já tem conta? <a href="#" onclick="alternarParaLogin()" style="color: var(--accent-color); text-decoration: none;">Faça Login</a>
-            </div>
+            <p id="cad-error" style="color: var(--danger-color); margin-top: 10px; text-align: center;"></p>
+            <div style="margin-top: 15px; text-align: center;"><a href="#" onclick="alternarParaLogin()" style="color: var(--accent-color);">Faça Login</a></div>
         </div>
     </div>
 
-    <!-- MODAL MEU PERFIL (Novo) -->
+    <!-- [MODAL PERFIL - ATUALIZADO COM BOTÃO DE PEDIDOS] -->
     <div id="modal-profile" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="close-btn" onclick="toggleProfile()">&times;</button>
             <h2>Meu Perfil</h2>
+            <div class="form-group"><label>CPF</label><input type="text" id="perf-cpf" disabled style="background: #333; color: #888;"></div>
+            <div class="form-group"><label>Nome</label><input type="text" id="perf-nome"></div>
+            <div class="form-group"><label>E-mail</label><input type="email" id="perf-email"></div>
             
-            <div class="form-group">
-                <label>CPF (Não alterável)</label>
-                <input type="text" id="perf-cpf" disabled style="background-color: #333; color: #888;">
-            </div>
-
-            <div class="form-group">
-                <label>Nome Completo</label>
-                <input type="text" id="perf-nome">
-            </div>
-            
-            <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" id="perf-email">
-            </div>
-
             <button class="btn-add" onclick="salvarPerfil()">Salvar Alterações</button>
+            
+            <hr style="border-color: #444; margin: 20px 0;">
+            
+            <button class="btn-add" onclick="abrirMeusPedidos()" style="background-color: #444; border: 1px solid #666;">
+                <i class="fas fa-box-open"></i> Ver Meus Pedidos
+            </button>
         </div>
     </div>
 
-    <!-- MODAL DO CARRINHO & CHECKOUT -->
+    <!-- [NOVO MODAL: MEUS PEDIDOS] -->
+    <div id="modal-pedidos" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+            <button class="close-btn" onclick="togglePedidos()">&times;</button>
+            <h2><i class="fas fa-history"></i> Histórico de Pedidos</h2>
+            <div id="lista-pedidos-container" style="margin-top: 20px;">
+                <!-- Pedidos carregados via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- [MODAL CARRINHO - Igual ao anterior] -->
     <div id="modal-cart" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-content" style="max-width: 600px;">
             <button class="close-btn" onclick="toggleCart()">&times;</button>
             <h2>Seu Carrinho</h2>
-            
-            <!-- Lista de Itens -->
-            <div id="cart-items" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px; border-bottom: 1px solid #444;">
-                <p style="text-align: center; color: #777;">Seu carrinho está vazio.</p>
+            <div id="cart-items" style="max-height: 200px; overflow-y: auto; border-bottom: 1px solid #444;"></div>
+            <div style="display: flex; justify-content: space-between; margin: 15px 0;">
+                <span>Total:</span><span style="font-weight: bold; color: var(--success-color);">R$ <span id="cart-total">0.00</span></span>
             </div>
             
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <span style="font-size: 1.1rem;">Total:</span>
-                <span style="font-size: 1.5rem; color: var(--success-color); font-weight: bold;">R$ <span id="cart-total">0.00</span></span>
-            </div>
-            
-            <!-- ÁREA DE CHECKOUT -->
             <div id="checkout-area" class="hidden">
-                <hr style="border-color: #444; margin: 15px 0;">
-                
-                <!-- 1. Endereço -->
-                <h4 style="margin-top: 0; color: var(--accent-color);"><i class="fas fa-map-marker-alt"></i> Endereço de Entrega</h4>
-                <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="end-rua" placeholder="Rua / Avenida" required>
+                <hr style="border-color: #444; margin: 10px 0;">
+                <h4>Endereço de Entrega</h4>
+                <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 10px;">
+                    <input type="text" id="end-rua" placeholder="Rua" required>
                     <input type="number" id="end-num" placeholder="Nº" required>
                 </div>
-                <input type="text" id="end-bairro" placeholder="Bairro" required style="margin-bottom: 15px;">
-
-                <!-- 2. Pagamento -->
-                <h4 style="margin-top: 0; color: var(--accent-color);"><i class="fas fa-credit-card"></i> Pagamento</h4>
+                <input type="text" id="end-bairro" placeholder="Bairro" required style="margin-bottom: 10px;">
                 
-                <div style="margin-bottom: 15px; display: flex; gap: 20px;">
-                    <label style="cursor: pointer; display: flex; align-items: center;">
-                        <input type="radio" name="pagamento" value="pix" checked onchange="togglePagamento()"> 
-                        <span style="margin-left: 5px;">PIX (Instantâneo)</span>
-                    </label>
-                    <label style="cursor: pointer; display: flex; align-items: center;">
-                        <input type="radio" name="pagamento" value="cartao" onchange="togglePagamento()"> 
-                        <span style="margin-left: 5px;">Cartão de Crédito</span>
-                    </label>
+                <h4>Pagamento</h4>
+                <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                    <label><input type="radio" name="pagamento" value="pix" checked onchange="togglePagamento()"> PIX</label>
+                    <label><input type="radio" name="pagamento" value="cartao" onchange="togglePagamento()"> Cartão</label>
                 </div>
-
-                <!-- Campo Extra para Cartão -->
-                <div id="div-cartao" class="hidden" style="margin-bottom: 15px;">
-                    <input type="text" id="pag-cartao-num" placeholder="Número do Cartão (16 dígitos)" maxlength="16">
-                </div>
-
-                <!-- Botão Final -->
-                <button class="btn-add" style="background-color: var(--success-color); color: #000; margin-top: 10px;" onclick="finalizarCompra()">
-                    FINALIZAR PEDIDO
-                </button>
+                <div id="div-cartao" class="hidden"><input type="text" id="pag-cartao-num" placeholder="Número do Cartão"></div>
+                
+                <button class="btn-add" style="background-color: var(--success-color); color: #000; margin-top: 10px;" onclick="finalizarCompra()">FINALIZAR PEDIDO</button>
             </div>
-            
-            <!-- Botão Inicial -->
-            <button id="btn-checkout-start" class="btn-add" onclick="iniciarCheckout()">
-                Ir para Pagamento
-            </button>
+            <button id="btn-checkout-start" class="btn-add" onclick="iniciarCheckout()">Ir para Pagamento</button>
         </div>
     </div>
 

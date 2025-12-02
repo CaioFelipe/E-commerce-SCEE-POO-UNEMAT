@@ -12,17 +12,14 @@ class ApiClient {
             'Content-Type': 'application/json'
         };
 
-        // Injeção Automática do Token (Se existir)
         const token = this._getToken();
         if (token) {
-            const cleanToken = token.replace(/"/g, ''); 
+            // Remove aspas extras caso existam
+            const cleanToken = token.replace(/"/g, '');
             headers['Authorization'] = `Bearer ${cleanToken}`;
         }
 
-        const config = {
-            method,
-            headers
-        };
+        const config = { method, headers };
 
         if (body) {
             config.body = JSON.stringify(body);
@@ -31,7 +28,6 @@ class ApiClient {
         try {
             const response = await fetch(`${this.baseUrl}${endpoint}`, config);
             
-            // Tenta fazer o parse do JSON
             let data;
             try {
                 data = await response.json();
@@ -39,23 +35,24 @@ class ApiClient {
                 data = null;
             }
 
-            // Tratamento Global de Erros (ex: Token Expirado)
-            if (response.status === 401) {
-                console.warn("Token expirado ou inválido. Realizando logout forçado.");
+            // CORREÇÃO CRÍTICA:
+            // Só faz logout forçado (reload) se for erro 401 E NÃO FOR TENTATIVA DE LOGIN.
+            // Se for login (endpoint contém 'login'), deixamos o app.js tratar o erro (ex: "Senha incorreta").
+            if (response.status === 401 && !endpoint.includes('login')) {
+                console.warn("Sessão expirada. Realizando logout.");
                 localStorage.removeItem('token');
                 localStorage.removeItem('usuario');
-                window.location.reload(); // Ou redirecionar para login
+                window.location.reload(); 
                 throw new Error("Sessão expirada");
             }
 
             if (!response.ok) {
-                // Lança o erro vindo da API (ex: "Estoque insuficiente")
                 throw new Error(data && data.erro ? data.erro : `Erro ${response.status}`);
             }
 
             return data;
         } catch (error) {
-            console.error(`Erro na requisição para ${endpoint}:`, error);
+            console.error(`Erro requisição ${endpoint}:`, error);
             throw error;
         }
     }
