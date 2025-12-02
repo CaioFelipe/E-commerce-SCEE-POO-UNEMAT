@@ -6,6 +6,31 @@
     <title>SCEE - Eletrônicos</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* CSS Extra para o Modal de Detalhes */
+        .modal-body-flex {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .modal-img-container {
+            flex: 1;
+            min-width: 250px;
+        }
+        .modal-info-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 768px) {
+            .modal-body-flex {
+                flex-direction: column;
+            }
+            .modal-img-container {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -23,14 +48,12 @@
     </header>
 
     <main class="container">
-        <!-- BARRA DE FILTROS (ATUALIZADA) -->
+        <!-- BARRA DE FILTROS -->
         <div class="filters-bar" style="background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
             <h4 style="margin: 0; color: var(--accent-color);"><i class="fas fa-filter"></i> Filtros:</h4>
             
-            <!-- NOVO: Select de Categoria -->
             <select id="filter-categoria" style="padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2d2d2d; color: white;">
                 <option value="">Todas as Categorias</option>
-                <!-- Opções carregadas via JS -->
             </select>
 
             <div style="display: flex; gap: 5px; align-items: center;">
@@ -50,8 +73,43 @@
         </div>
     </main>
 
-    <!-- MODAIS (Login, Cadastro, Carrinho mantêm-se) -->
-    <!-- [MODAL LOGIN - Igual ao anterior] -->
+    <!-- [MODAL DETALHES DO PRODUTO (NOVO)] -->
+    <div id="modal-produto" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 800px; width: 95%;">
+            <button class="close-btn" onclick="toggleDetalhesProduto()">&times;</button>
+            
+            <div class="modal-body-flex">
+                <!-- Coluna da Imagem -->
+                <div class="modal-img-container">
+                    <img id="det-img" src="" alt="Produto" style="width: 100%; border-radius: 8px; object-fit: cover; max-height: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                </div>
+
+                <!-- Coluna de Informações -->
+                <div class="modal-info-container">
+                    <h2 id="det-nome" style="margin-top: 0; color: var(--accent-color); font-size: 1.8rem;">Nome do Produto</h2>
+                    <p id="det-sku" style="color: #777; font-size: 0.8rem; margin-bottom: 20px;">SKU: ---</p>
+                    
+                    <div style="background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 20px; flex-grow: 1;">
+                        <h5 style="margin-top: 0; color: #aaa;">Descrição:</h5>
+                        <p id="det-desc" style="line-height: 1.6; color: #ddd;">Descrição detalhada...</p>
+                    </div>
+                    
+                    <div style="margin-top: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <span style="font-size: 2.2rem; color: var(--success-color); font-weight: bold;">R$ <span id="det-preco">0.00</span></span>
+                            <span id="det-estoque-aviso" style="color: orange; font-size: 0.9rem;"></span>
+                        </div>
+
+                        <button id="det-btn-add" class="btn-add" style="font-size: 1.1rem; padding: 15px;">
+                            <i class="fas fa-cart-plus"></i> Adicionar ao Carrinho
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LOGIN -->
     <div id="modal-login" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="close-btn" onclick="toggleLogin()">&times;</button>
@@ -64,7 +122,7 @@
         </div>
     </div>
 
-    <!-- [MODAL CADASTRO - Igual ao anterior] -->
+    <!-- MODAL CADASTRO -->
     <div id="modal-cadastro" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="close-btn" onclick="toggleCadastro()">&times;</button>
@@ -80,7 +138,7 @@
         </div>
     </div>
 
-    <!-- [MODAL PERFIL - ATUALIZADO COM BOTÃO DE PEDIDOS] -->
+    <!-- MODAL PERFIL -->
     <div id="modal-profile" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="close-btn" onclick="toggleProfile()">&times;</button>
@@ -88,29 +146,22 @@
             <div class="form-group"><label>CPF</label><input type="text" id="perf-cpf" disabled style="background: #333; color: #888;"></div>
             <div class="form-group"><label>Nome</label><input type="text" id="perf-nome"></div>
             <div class="form-group"><label>E-mail</label><input type="email" id="perf-email"></div>
-            
             <button class="btn-add" onclick="salvarPerfil()">Salvar Alterações</button>
-            
             <hr style="border-color: #444; margin: 20px 0;">
-            
-            <button class="btn-add" onclick="abrirMeusPedidos()" style="background-color: #444; border: 1px solid #666;">
-                <i class="fas fa-box-open"></i> Ver Meus Pedidos
-            </button>
+            <button class="btn-add" onclick="abrirMeusPedidos()" style="background-color: #444; border: 1px solid #666;"><i class="fas fa-box-open"></i> Ver Meus Pedidos</button>
         </div>
     </div>
 
-    <!-- [NOVO MODAL: MEUS PEDIDOS] -->
+    <!-- MODAL MEUS PEDIDOS -->
     <div id="modal-pedidos" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
             <button class="close-btn" onclick="togglePedidos()">&times;</button>
             <h2><i class="fas fa-history"></i> Histórico de Pedidos</h2>
-            <div id="lista-pedidos-container" style="margin-top: 20px;">
-                <!-- Pedidos carregados via JS -->
-            </div>
+            <div id="lista-pedidos-container" style="margin-top: 20px;"></div>
         </div>
     </div>
 
-    <!-- [MODAL CARRINHO - Igual ao anterior] -->
+    <!-- MODAL CARRINHO -->
     <div id="modal-cart" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
             <button class="close-btn" onclick="toggleCart()">&times;</button>
@@ -128,14 +179,12 @@
                     <input type="number" id="end-num" placeholder="Nº" required>
                 </div>
                 <input type="text" id="end-bairro" placeholder="Bairro" required style="margin-bottom: 10px;">
-                
                 <h4>Pagamento</h4>
                 <div style="display: flex; gap: 15px; margin-bottom: 10px;">
                     <label><input type="radio" name="pagamento" value="pix" checked onchange="togglePagamento()"> PIX</label>
                     <label><input type="radio" name="pagamento" value="cartao" onchange="togglePagamento()"> Cartão</label>
                 </div>
                 <div id="div-cartao" class="hidden"><input type="text" id="pag-cartao-num" placeholder="Número do Cartão"></div>
-                
                 <button class="btn-add" style="background-color: var(--success-color); color: #000; margin-top: 10px;" onclick="finalizarCompra()">FINALIZAR PEDIDO</button>
             </div>
             <button id="btn-checkout-start" class="btn-add" onclick="iniciarCheckout()">Ir para Pagamento</button>

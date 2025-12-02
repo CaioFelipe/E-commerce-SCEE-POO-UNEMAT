@@ -34,6 +34,8 @@ async function carregarProdutos(filtros = {}) {
     
     try {
         const produtos = await api.get(`/web/produtos?${params}`);
+        produtosGlobais = produtos; // Salva para usar no modal de detalhes
+        
         grid.innerHTML = ''; 
 
         if (produtos.length === 0) {
@@ -44,16 +46,23 @@ async function carregarProdutos(filtros = {}) {
         produtos.forEach(p => {
             const card = document.createElement('div');
             card.className = 'product-card';
+            
             const imgUrl = p.imagem_url ? `/uploads/${p.imagem_url}` : null;
             const imgTag = imgUrl 
                 ? `<img src="${imgUrl}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/150?text=Sem+Imagem'">`
                 : `<img src="https://via.placeholder.com/150?text=Sem+Imagem" alt="${p.nome}">`;
 
+            // HTML Atualizado:
+            // 1. Div clicável envolvendo imagem e título para abrir detalhes
+            // 2. Removido o div de estoque
             card.innerHTML = `
-                ${imgTag}
-                <h3>${p.nome}</h3>
-                <div class="stock">Estoque: ${p.estoque} un.</div>
+                <div style="cursor: pointer;" onclick="abrirDetalhesProduto(${p.id})">
+                    ${imgTag}
+                    <h3>${p.nome}</h3>
+                </div>
+                
                 <div class="price">R$ ${p.preco.toFixed(2)}</div>
+                
                 <button class="btn-add" 
                     ${p.estoque > 0 ? '' : 'disabled style="background-color:#555;cursor:not-allowed;"'}
                     onclick="adicionarAoCarrinho(${p.id}, '${p.nome.replace(/'/g, "\\'")}', ${p.preco})">
@@ -65,6 +74,59 @@ async function carregarProdutos(filtros = {}) {
     } catch (error) {
         grid.innerHTML = `<p style="color: var(--danger-color);">Erro: ${error.message}</p>`;
     }
+}
+
+// --- NOVO: LÓGICA DE DETALHES DO PRODUTO ---
+function abrirDetalhesProduto(id) {
+    const p = produtosGlobais.find(prod => prod.id === id);
+    if (!p) return;
+
+    // Preenche os dados
+    document.getElementById('det-nome').innerText = p.nome;
+    document.getElementById('det-sku').innerText = `SKU: ${p.sku}`;
+    document.getElementById('det-desc').innerText = p.descricao || "Sem descrição disponível.";
+    document.getElementById('det-preco').innerText = p.preco.toFixed(2);
+    
+    // Imagem
+    const imgUrl = p.imagem_url ? `/uploads/${p.imagem_url}` : 'https://via.placeholder.com/300?text=Sem+Imagem';
+    document.getElementById('det-img').src = imgUrl;
+
+    // Configura o Botão de Adicionar (Estoque e Ação)
+    const btn = document.getElementById('det-btn-add');
+    const avisoEstoque = document.getElementById('det-estoque-aviso');
+
+    if (p.estoque > 0) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-cart-plus"></i> Adicionar ao Carrinho';
+        btn.onclick = () => {
+            adicionarAoCarrinho(p.id, p.nome, p.preco);
+            toggleDetalhesProduto(); // Fecha modal após adicionar
+        };
+        btn.style.backgroundColor = 'var(--accent-color)';
+        btn.style.cursor = 'pointer';
+        
+        // Mostra "Últimas unidades" se estoque baixo (< 5)
+        if(p.estoque < 5) {
+            avisoEstoque.innerText = `Restam apenas ${p.estoque} un!`;
+        } else {
+            avisoEstoque.innerText = "Em estoque";
+            avisoEstoque.style.color = "var(--success-color)";
+        }
+    } else {
+        btn.disabled = true;
+        btn.innerText = "Produto Indisponível";
+        btn.style.backgroundColor = '#555';
+        btn.style.cursor = 'not-allowed';
+        avisoEstoque.innerText = "Esgotado";
+        avisoEstoque.style.color = "var(--danger-color)";
+    }
+
+    const modal = document.getElementById('modal-produto');
+    modal.classList.remove('hidden');
+}
+
+function toggleDetalhesProduto() {
+    document.getElementById('modal-produto').classList.toggle('hidden');
 }
 
 function aplicarFiltros() {
@@ -91,79 +153,52 @@ function limparFiltros() {
 }
 
 // --- MEUS PEDIDOS (ATUALIZADO COM BOTÃO CANCELAR) ---
+// --- MEUS PEDIDOS (ATUALIZADO COM RASTREIO) ---
 async function abrirMeusPedidos() {
-    toggleProfile(); 
-    const modal = document.getElementById('modal-pedidos');
-    modal.classList.remove('hidden');
-    
-    const container = document.getElementById('lista-pedidos-container');
-    container.innerHTML = '<p>Carregando histórico...</p>';
-
+    toggleProfile(); document.getElementById('modal-pedidos').classList.remove('hidden');
+    const cont = document.getElementById('lista-pedidos-container'); cont.innerHTML = '<p>Carregando...</p>';
     try {
-        const pedidos = await api.get('/web/meus-pedidos');
-        container.innerHTML = '';
-
-        if (pedidos.length === 0) {
-            container.innerHTML = '<p>Você ainda não fez nenhum pedido.</p>';
-            return;
-        }
-
+        const pedidos = await api.get('/web/meus-pedidos'); cont.innerHTML = '';
+        if (pedidos.length === 0) { cont.innerHTML = '<p>Sem pedidos.</p>'; return; }
         pedidos.forEach(p => {
-            // Renderiza Itens
-            let htmlItens = '';
-            p.itens.forEach(item => {
-                const img = item.imagem_url ? `/uploads/${item.imagem_url}` : 'https://via.placeholder.com/50';
-                htmlItens += `
-                    <div style="display: flex; align-items: center; margin-top: 10px; background: #252525; padding: 5px; border-radius: 4px;">
-                        <img src="${img}" style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">
-                        <div style="flex: 1;">${item.nome}</div>
-                        <div style="width: 100px; text-align: right;">${item.quantidade}x R$ ${item.preco_unitario.toFixed(2)}</div>
-                    </div>
-                `;
+            let itensHtml = '';
+            p.itens.forEach(i => {
+                const img = i.imagem_url ? `/uploads/${i.imagem_url}` : 'https://via.placeholder.com/50';
+                itensHtml += `<div style="display:flex;align-items:center;margin-top:10px;background:#252525;padding:5px;border-radius:4px;"><img src="${img}" style="width:40px;height:40px;object-fit:cover;margin-right:10px;"><div style="flex:1;">${i.nome}</div><div style="width:100px;text-align:right;">${i.quantidade}x R$ ${i.preco_unitario.toFixed(2)}</div></div>`;
             });
-
-            // Lógica do Botão Cancelar (Aparece apenas se status for Processando)
-            let btnCancelarHtml = '';
+            
+            // Lógica Rastreio e Cancelar
+            let acoesHtml = '';
             if (p.status === 'Processando') {
-                btnCancelarHtml = `
-                    <button onclick="cancelarPedido(${p.id})" 
-                            style="background-color: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 5px;">
-                        <i class="fas fa-times"></i> Cancelar Pedido
-                    </button>
-                `;
+                acoesHtml = `<button onclick="cancelarPedido(${p.id})" style="background:var(--danger-color);color:white;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:0.8rem;margin-top:5px;">Cancelar</button>`;
+            } else if (p.status === 'Enviado' && p.codigo_rastreio) {
+                acoesHtml = `<div style="margin-top:5px;padding:8px;background:#2a2a2a;border:1px dashed var(--accent-color);border-radius:4px;color:var(--accent-color);font-size:0.9rem;"><i class="fas fa-truck"></i> Rastreio: <strong>${p.codigo_rastreio}</strong></div>`;
             }
 
-            // Renderiza Card do Pedido
-            const divPedido = document.createElement('div');
-            divPedido.style = "background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333;";
-            divPedido.innerHTML = `
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 10px;">
-                    <span style="color: var(--accent-color); font-weight: bold;">Pedido #${p.id}</span>
-                    <span style="color: #aaa;">${p.data_pedido}</span>
+            const div = document.createElement('div');
+            div.style = "background:#1e1e1e;padding:15px;border-radius:8px;margin-bottom:20px;border:1px solid #333;";
+            div.innerHTML = `
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #444;padding-bottom:10px;margin-bottom:10px;">
+                    <span style="color:var(--accent-color);font-weight:bold;">Pedido #${p.id}</span><span style="color:#aaa;">${p.data_pedido}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                     <div>
-                        <span>Status: <strong style="color: ${getStatusColor(p.status)}">${p.status}</strong></span>
-                        <br>
-                        ${btnCancelarHtml}
+                        <span>Status: <strong style="color:${getStatusColor(p.status)}">${p.status}</strong></span>
+                        <br>${acoesHtml}
                     </div>
-                    <span>Total: <strong style="font-size: 1.2rem;">R$ ${p.total.toFixed(2)}</strong></span>
+                    <span>Total: <strong style="font-size:1.2rem;">R$ ${p.total.toFixed(2)}</strong></span>
                 </div>
-                <div style="margin-top: 10px;">
-                    <small style="color: #888;">Entregar em: ${p.endereco_entrega}</small>
-                </div>
-                <div style="margin-top: 15px;">
-                    <h5 style="margin: 0 0 5px 0;">Itens:</h5>
-                    ${htmlItens}
-                </div>
+                <div style="margin-top:10px;"><small style="color:#888;">Entregar em: ${p.endereco_entrega}</small></div>
+                <div style="margin-top:15px;"><h5 style="margin:0 0 5px 0;">Itens:</h5>${itensHtml}</div>
             `;
-            container.appendChild(divPedido);
+            cont.appendChild(div);
         });
-
-    } catch (e) {
-        container.innerHTML = `<p style="color: red;">Erro: ${e.message}</p>`;
-    }
+    } catch(e) { cont.innerHTML = `<p style="color:red;">Erro: ${e.message}</p>`; }
 }
+function getStatusColor(s) { if(s==='Enviado') return 'var(--success-color)'; if(s==='Cancelado') return 'var(--danger-color)'; return 'orange'; }
+async function cancelarPedido(id) { if(!confirm("Cancelar?")) return; try{ await api.put(`/web/pedidos/${id}/cancelar`); document.getElementById('modal-pedidos').classList.add('hidden'); abrirMeusPedidos(); } catch(e){ alert(e.message); } }
+function togglePedidos() { document.getElementById('modal-pedidos').classList.toggle('hidden'); }
+
 
 // Helper para cores de status
 function getStatusColor(status) {

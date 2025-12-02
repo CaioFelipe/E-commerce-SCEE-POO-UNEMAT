@@ -83,6 +83,7 @@ def create_tables():
         total REAL NOT NULL,
         endereco_entrega TEXT NOT NULL,
         metodo_pagamento TEXT,
+        codigo_rastreio TEXT,  -- COLUNA NOVA
         FOREIGN KEY(cliente_id) REFERENCES usuarios(id)
     );
     """)
@@ -100,7 +101,6 @@ def create_tables():
     """)
 
     # --- 4. CARRINHO (PERSISTÊNCIA) ---
-    # Estas tabelas faltavam e causavam o erro no run_seed.py
     cursor.execute("""
     CREATE TABLE carrinhos (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
