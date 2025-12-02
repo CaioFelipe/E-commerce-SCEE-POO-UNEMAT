@@ -1,4 +1,3 @@
-# api/api_gestao.py
 from flask import Blueprint, request, jsonify
 from services.auth_service import AuthService
 from services.catalogo_service import CatalogoService

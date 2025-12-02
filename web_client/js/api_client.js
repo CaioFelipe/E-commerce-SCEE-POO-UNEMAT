@@ -1,5 +1,3 @@
-// web_client/js/api_client.js
-
 class ApiClient {
     constructor() {
         this.baseUrl = "http://127.0.0.1:5000/api";

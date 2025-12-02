@@ -1,4 +1,3 @@
-# services/catalogo_service.py
 from core.repositories.produto_repo import ProdutoRepository
 from core.models.produto import Produto
 

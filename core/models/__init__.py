@@ -5,5 +5,6 @@ from .produto import Produto
 from .categoria import Categoria
 from .pedido import Pedido
 from .item_pedido import ItemPedido
-from .carrinho import Carrinho, ItemCarrinho
 from .endereco import Endereco
+from .carrinho import Carrinho
+from .item_carrinho import ItemCarrinho

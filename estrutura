@@ -1,4 +1,4 @@
-SCEE_Project/
+E-COMMERCE-SCEE-POO-UNEMAT/
 │
 ├── config.py                 # Configurações (Secret Key, DB Path, Upload Folder) [cite: 637]
 ├── main.py                   # Entry Point da API Flask (Registra Blueprints) [cite: 635]

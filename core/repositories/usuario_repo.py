@@ -51,8 +51,6 @@ class UsuarioRepository:
     def buscar_por_id(self, id):
         conn = get_db_connection()
         try:
-            # AQUI ESTAVA O POSSÍVEL ERRO: O token_required chama este método.
-            # Precisamos garantir o JOIN para saber se é cliente e ter o CPF.
             query = """
                 SELECT u.*, c.cpf 
                 FROM usuarios u

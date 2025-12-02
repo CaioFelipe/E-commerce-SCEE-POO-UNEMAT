@@ -1,5 +1,3 @@
-// web_client/js/app.js
-
 let carrinho = [];
 let token = localStorage.getItem('token');
 let usuario = JSON.parse(localStorage.getItem('usuario'));

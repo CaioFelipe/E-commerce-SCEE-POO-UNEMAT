@@ -1,5 +1,3 @@
-# api/__init__.py
-
 # Expõe os Blueprints para facilitar a importação no main.py
 from .api_web import api_web_bp
 from .api_gestao import api_gestao_bp

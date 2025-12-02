@@ -1,6 +1,6 @@
 from core.repositories.pedido_repo import PedidoRepository
 from core.repositories.endereco_repo import EnderecoRepository
-from core.interfaces.pagamento import FabricaPagamento
+from core.interfaces import FabricaPagamento
 
 class VendasService:
     def __init__(self):

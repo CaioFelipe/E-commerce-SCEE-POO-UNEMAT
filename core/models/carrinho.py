@@ -1,13 +1,4 @@
-class ItemCarrinho:
-    def __init__(self, produto_id, quantidade, preco_unitario, nome_produto=None):
-        self.produto_id = produto_id
-        self.quantidade = quantidade
-        self.preco_unitario = preco_unitario
-        self.nome_produto = nome_produto # Útil para exibição no JSON
-
-    @property
-    def subtotal(self):
-        return self.quantidade * self.preco_unitario
+from .item_carrinho import ItemCarrinho
 
 class Carrinho:
     def __init__(self, usuario_id, itens=None):
@@ -17,3 +8,24 @@ class Carrinho:
     @property
     def total(self):
         return sum(item.subtotal for item in self.itens)
+
+    def adicionar_item(self, item: ItemCarrinho):
+        # Verifica se o item já existe para apenas somar quantidade
+        for i in self.itens:
+            if i.produto_id == item.produto_id:
+                i.quantidade += item.quantidade
+                return
+        self.itens.append(item)
+
+    def remover_item(self, produto_id):
+        self.itens = [i for i in self.itens if i.produto_id != produto_id]
+
+    def limpar(self):
+        self.itens = []
+    
+    def to_dict(self):
+        return {
+            "usuario_id": self.usuario_id,
+            "itens": [item.to_dict() for item in self.itens],
+            "total": self.total
+        }
