@@ -20,185 +20,226 @@ O diagrama abaixo ilustra a estrutura das classes, a organização em `namespace
 
 ```mermaid
 classDiagram
-    direction TD
-
-    %% =======================================================
-    %% 1. CAMADA DE APRESENTAÇÃO (FRONTEND)
-    %% =======================================================
-    namespace Frontend {
-        class InterfaceWeb {
-            +renderizar_pagina_html()
-            +enviar_requisicao_api()
-        }
+    %% Estereótipos
+    class Usuario {
+        <<Abstract>>
+        #_id: int
+        #_nome: string
+        #_email: string
+        #_senha_hash: string
+        #_tipo: string
+        +__init__(id, nome, email, senha_hash, tipo)
+        +gerar_hash(senha_plana)$
+        +verificar_senha(senha_plana) bool
+        +obter_permissao_acesso()* dict
     }
 
-    %% =======================================================
-    %% 2. CAMADA DE LÓGICA DE NEGÓCIOS (BACKEND)
-    %% =======================================================
-    namespace Backend {
-        %% --- SERVIÇOS ---
-        class AuthService {
-            <<Serviço>>
-            -_repo: UsuarioRepository
-            +login(email, senha) dict
-        }
-        class CatalogoService {
-            <<Serviço>>
-            -_repo: ProdutoRepository
-            +listar_produtos() List
-            +buscar_produto(id) Produto
-            +criar_produto(dados) Produto
-        }
-        class VendasService {
-            <<Serviço>>
-            -_pedido_repo: PedidoRepository
-            -_endereco_repo: EnderecoRepository
-            +realizar_checkout(uid, dados) int
-        }
-
-        %% --- PAGAMENTO ---
-        class GatewayPagamento {
-            <<Interface>>
-            +processar_pagamento(valor, dados)* bool
-        }
-        class PagamentoPix {
-            <<Serviço>>
-            +processar_pagamento(valor, dados) bool
-        }
-        class PagamentoCartao {
-            <<Serviço>>
-            +processar_pagamento(valor, dados) bool
-        }
-        class FabricaPagamento {
-            <<Factory>>
-            +criar(tipo)$ Gateway
-        }
-
-        %% --- ENTIDADES E OBJETOS ---
-        class Usuario {
-            <<Abstract>>
-            #_id: int
-            #_nome: str
-            #_email: str
-            +verificar_senha(senha) bool
-            +obter_permissao_acesso()* dict
-        }
-        class Cliente {
-            <<Objeto>>
-            -_cpf: str
-            +validar_cpf() bool
-        }
-        class Administrador {
-            <<Objeto>>
-            +tem_acesso_total() bool
-        }
-        class Produto {
-            <<Objeto>>
-            -_sku: str
-            -_preco: float
-            -_estoque: int
-            -_categoria_id: int
-            +verificar_disponibilidade(qtd) bool
-            +baixar_estoque(qtd)
-        }
-        class Categoria {
-            <<Objeto>>
-            -_nome: str
-            -_descricao: str
-        }
-        class Pedido {
-            <<Objeto>>
-            -_total: float
-            -_status: str
-            -_itens: List~ItemPedido~
-            +pode_ser_cancelado() bool
-        }
-        class ItemPedido {
-            <<Objeto>>
-            -_quantidade: int
-            -_preco_unitario: float
-            +subtotal() float
-        }
-        class Carrinho {
-            <<Objeto>>
-            -_itens: List~ItemCarrinho~
-            +total() float
-            +adicionar_item(item)
-        }
-        class ItemCarrinho {
-            <<Objeto>>
-            -_quantidade: int
-            -_preco: float
-            +subtotal() float
-        }
-        class Endereco {
-            <<Objeto>>
-            -_rua: str
-            -_cep: str
-        }
+    class Cliente {
+        <<Entity>>
+        -_cpf: string
+        +__init__(id, nome, email, senha_hash, cpf)
+        +obter_permissao_acesso() dict
+        +validar_cpf() bool
     }
 
-    %% =======================================================
-    %% 3. CAMADA DE DADOS (PERSISTÊNCIA)
-    %% =======================================================
-    namespace Persistencia {
-        class BaseRepository {
-            <<Interface>>
-            +buscar_por_id(id)*
-            +salvar(entidade)*
-        }
-        class UsuarioRepository {
-            <<Dados>>
-            +buscar_por_email(email) Usuario
-        }
-        class ProdutoRepository {
-            <<Dados>>
-            +listar_todos(filtros) List
-        }
-        class PedidoRepository {
-            <<Dados>>
-            +criar_pedido_atomico(uid, itens...) int
-        }
-        class EnderecoRepository {
-            <<Dados>>
-            +salvar_ou_atualizar(uid, dados)
-        }
+    class Administrador {
+        <<Entity>>
+        +__init__(id, nome, email, senha_hash)
+        +obter_permissao_acesso() dict
+        +tem_acesso_total() bool
     }
 
-    %% =======================================================
-    %% RELACIONAMENTOS
-    %% =======================================================
+    class Produto {
+        <<Entity>>
+        -_id: int
+        -_sku: string
+        -_nome: string
+        -_preco: float
+        -_estoque: int
+        -_descricao: string
+        -_categoria_id: int
+        -_imagem_url: string
+        +__init__(id, sku, nome, preco, estoque)
+        +verificar_disponibilidade(quantidade_solicitada) bool
+        +baixar_estoque(quantidade)
+    }
 
-    %% Frontend -> Backend
-    Frontend.InterfaceWeb ..> Backend.AuthService : Usa
-    Frontend.InterfaceWeb ..> Backend.CatalogoService : Usa
-    Frontend.InterfaceWeb ..> Backend.VendasService : Usa
+    class Categoria {
+        <<Entity>>
+        -_id: int
+        -_nome: string
+        -_descricao: string
+        +__init__(id, nome, descricao)
+    }
 
-    %% Backend Interno
-    Backend.Usuario <|-- Backend.Cliente
-    Backend.Usuario <|-- Backend.Administrador
-    Backend.Pedido *-- Backend.ItemPedido
-    Backend.Carrinho *-- Backend.ItemCarrinho
-    Backend.Produto --> Backend.Categoria : Tem Categoria
+    class Pedido {
+        <<Aggregate Root>>
+        -_id: int
+        -_cliente_id: int
+        -_data_pedido: datetime
+        -_total: float
+        -_endereco_entrega: string
+        -_status: string
+        -_itens: List~ItemPedido~
+        +STATUS_PROCESSANDO: str$
+        +STATUS_ENVIADO: str$
+        +STATUS_CANCELADO: str$
+        +__init__(id, cliente_id, data_pedido, total, endereco_entrega, status, itens)
+        +pode_ser_cancelado() bool
+    }
 
-    %% Pagamento
-    Backend.GatewayPagamento <|.. Backend.PagamentoPix
-    Backend.GatewayPagamento <|.. Backend.PagamentoCartao
-    Backend.FabricaPagamento ..> Backend.GatewayPagamento : Cria
-    Backend.VendasService ..> Backend.FabricaPagamento : Usa
+    class ItemPedido {
+        <<Entity>>
+        -_id: int
+        -_pedido_id: int
+        -_produto_id: int
+        -_quantidade: int
+        -_preco_unitario: float
+        -_nome_produto: string
+        +__init__(id, pedido_id, produto_id, quantidade, preco_unitario, nome_produto)
+        +subtotal() float
+    }
 
-    %% Backend -> Persistência (Injeção)
-    Backend.AuthService --> Persistencia.UsuarioRepository : Usa
-    Backend.CatalogoService --> Persistencia.ProdutoRepository : Usa
-    Backend.VendasService --> Persistencia.PedidoRepository : Usa
-    Backend.VendasService --> Persistencia.EnderecoRepository : Usa
+    class Carrinho {
+        <<Entity>>
+        -_usuario_id: int
+        -_itens: List~ItemCarrinho~
+        +__init__(usuario_id, itens)
+        +total() float
+        +adicionar_item(item: ItemCarrinho)
+        +remover_item(produto_id)
+        +limpar()
+        +to_dict() dict
+    }
 
-    %% Retorno de Objetos
-    Persistencia.UsuarioRepository ..> Backend.Usuario : Retorna
-    Persistencia.ProdutoRepository ..> Backend.Produto : Retorna
-    Persistencia.PedidoRepository ..> Backend.Pedido : Retorna
+    class ItemCarrinho {
+        <<Value Object>>
+        -_produto_id: int
+        -_quantidade: int
+        -_preco_unitario: float
+        -_nome_produto: string
+        +__init__(produto_id, quantidade, preco_unitario, nome_produto)
+        +subtotal() float
+        +to_dict() dict
+    }
 
-    %% Implementação de Repositórios
-    Persistencia.BaseRepository <|.. Persistencia.UsuarioRepository
-    Persistencia.BaseRepository <|.. Persistencia.ProdutoRepository
-    Persistencia.BaseRepository <|.. Persistencia.PedidoRepository
+    class Endereco {
+        <<Value Object>>
+        -_id: int
+        -_usuario_id: int
+        -_rua: string
+        -_numero: string
+        -_bairro: string
+        -_cidade: string
+        -_estado: string
+        -_cep: string
+        +__init__(id, usuario_id, rua, numero, bairro, cidade, estado, cep)
+        +__str__() string
+    }
+
+    %% Interfaces e Serviços
+    class GatewayPagamento {
+        <<Interface>>
+        +processar_pagamento(valor, dados_pagamento)* bool, str
+    }
+
+    class PagamentoPix {
+        <<Service>>
+        +processar_pagamento(valor, dados_pagamento) bool, str
+    }
+
+    class PagamentoCartao {
+        <<Service>>
+        +processar_pagamento(valor, dados_pagamento) bool, str
+    }
+
+    class FabricaPagamento {
+        <<Factory>>
+        +criar(tipo)$ GatewayPagamento
+    }
+
+    class AuthService {
+        <<Service>>
+        -_repo: UsuarioRepository
+        +login(email, senha_plana) dict
+    }
+
+    class CatalogoService {
+        <<Service>>
+        -_repo: ProdutoRepository
+        +listar_produtos() List~dict~
+        +buscar_produto(produto_id) Produto
+        +criar_produto(dados_produto) Produto
+    }
+
+    class VendasService {
+        <<Service>>
+        -_pedido_repo: PedidoRepository
+        -_endereco_repo: EnderecoRepository
+        +realizar_checkout(usuario_id, dados_checkout) int
+    }
+
+    %% Repositórios
+    class BaseRepository {
+        <<Interface>>
+        +buscar_por_id(id)*
+        +listar_todos()*
+        +salvar(entidade)*
+        +deletar(id)*
+    }
+
+    class UsuarioRepository {
+        <<Repository>>
+        -_instanciar_correto(row) Usuario
+        +buscar_por_email(email) Usuario
+        +buscar_por_id(id) Usuario
+        +criar(usuario) Usuario
+        +atualizar(usuario) bool
+        +listar_clientes() List~dict~
+    }
+
+    class ProdutoRepository {
+        <<Repository>>
+        +listar_todos(filtros) List~dict~
+        +buscar_por_id(id) Produto
+        +salvar(produto) Produto
+        +listar_categorias() List~dict~
+    }
+
+    class PedidoRepository {
+        <<Repository>>
+        +criar_pedido_atomico(usuario_id, itens_carrinho, total, endereco, valor_frete) int
+        +listar_todos() List~dict~
+        +buscar_por_id_com_itens(pedido_id) dict
+        +buscar_historico_cliente(cliente_id) List~dict~
+        +atualizar_status(pedido_id, novo_status) bool
+    }
+
+    class EnderecoRepository {
+        <<Repository>>
+        +salvar_ou_atualizar(usuario_id, rua, numero, bairro)
+        +buscar_por_usuario(usuario_id) dict
+    }
+
+    %% Relacionamentos
+    Usuario <|-- Cliente : Herança
+    Usuario <|-- Administrador : Herança
+    
+    GatewayPagamento <|.. PagamentoPix : Implementa
+    GatewayPagamento <|.. PagamentoCartao : Implementa
+    FabricaPagamento ..> GatewayPagamento : Cria
+
+    Pedido *-- ItemPedido : Composição
+    Carrinho *-- ItemCarrinho : Composição
+    
+    AuthService --> UsuarioRepository : Usa
+    CatalogoService --> ProdutoRepository : Usa
+    VendasService --> PedidoRepository : Usa
+    VendasService --> EnderecoRepository : Usa
+    VendasService ..> FabricaPagamento : Usa
+
+    ProdutoRepository ..> Produto : Persiste
+    PedidoRepository ..> Pedido : Persiste
+    UsuarioRepository ..> Usuario : Persiste
+    
+    Produto --> Categoria : Pertence
