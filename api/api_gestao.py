@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify
 from services.auth_service import AuthService
 from services.catalogo_service import CatalogoService
 from core.repositories.pedido_repo import PedidoRepository
-from core.repositories.produto_repo import ProdutoRepository  # <--- FALTAVA ESTA IMPORTAÇÃO
-from core.repositories.usuario_repo import UsuarioRepository  # <--- E ESTA
+from core.repositories.produto_repo import ProdutoRepository  
+from core.repositories.usuario_repo import UsuarioRepository  
 from .utils import token_required, admin_required
 
 api_gestao_bp = Blueprint('api_gestao', __name__)

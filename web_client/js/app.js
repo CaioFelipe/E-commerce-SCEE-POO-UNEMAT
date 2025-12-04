@@ -71,10 +71,11 @@ async function carregarProdutos(filtros = {}) {
             const card = document.createElement('div');
             card.className = 'product-card';
             
-            const imgUrl = p.imagem_url ? `/uploads/${p.imagem_url}` : null;
+            const apiBase = "http://127.0.0.1:5000"; 
+            const imgUrl = p.imagem_url ? `${apiBase}/uploads/${p.imagem_url}` : null;
             const imgTag = imgUrl 
-                ? `<img src="${imgUrl}" alt="${p.nome}" onerror="this.src='https://via.placeholder.com/150?text=Sem+Imagem'">`
-                : `<img src="https://via.placeholder.com/150?text=Sem+Imagem" alt="${p.nome}">`;
+                ? `<img src="${imgUrl}" alt="${p.nome}" onerror="this.src='https://placehold.co/150x150?text=Sem+Imagem'">`
+                : `<img src="https://placehold.co/150x150?text=Sem+Imagem" alt="${p.nome}">`;
 
             // HTML Atualizado:
             // 1. Div clicável envolvendo imagem e título para abrir detalhes
@@ -112,8 +113,10 @@ function abrirDetalhesProduto(id) {
     document.getElementById('det-preco').innerText = p.preco.toFixed(2);
     
     // Imagem
-    const imgUrl = p.imagem_url ? `/uploads/${p.imagem_url}` : 'https://via.placeholder.com/300?text=Sem+Imagem';
-    document.getElementById('det-img').src = imgUrl;
+    const apiBase = "http://127.0.0.1:5000";
+    document.getElementById('det-img').src = p.imagem_url 
+        ? `${apiBase}/uploads/${p.imagem_url}` 
+        : 'https://placehold.co/150x150?text=Sem+Imagem';
 
     // Configura o Botão de Adicionar (Estoque e Ação)
     const btn = document.getElementById('det-btn-add');
@@ -186,7 +189,7 @@ async function abrirMeusPedidos() {
         pedidos.forEach(p => {
             let itensHtml = '';
             p.itens.forEach(i => {
-                const img = i.imagem_url ? `/uploads/${i.imagem_url}` : 'https://via.placeholder.com/50';
+                const img = i.imagem_url ? `http://127.0.0.1:5000/uploads/${i.imagem_url}` : 'https://placehold.co/150x150?text=Sem+Imagem';
                 itensHtml += `<div style="display:flex;align-items:center;margin-top:10px;background:#252525;padding:5px;border-radius:4px;"><img src="${img}" style="width:40px;height:40px;object-fit:cover;margin-right:10px;"><div style="flex:1;">${i.nome}</div><div style="width:100px;text-align:right;">${i.quantidade}x R$ ${i.preco_unitario.toFixed(2)}</div></div>`;
                 
             });
@@ -439,6 +442,6 @@ async function carregarProdutos(f={}){
     try{const r=await api.get(`/web/produtos?${p}`);
     produtosGlobais=r;g.innerHTML='';if(r.length===0){g.innerHTML='Nada.';return}r.forEach(x=>{const c=document.createElement('div');
         c.className='product-card';
-        const im=x.imagem_url?`/uploads/${x.imagem_url}`:null;const tag=im?`<img src="${im}" onerror="this.src='https://via.placeholder.com/150'">`:`<img src="https://via.placeholder.com/150">`;
+        const im=x.imagem_url?`http://127.0.0.1:5000/uploads/${x.imagem_url}`:null;const tag=im?`<img src="${im}" onerror="https://placehold.co/150x150?text=Sem+Imagem'">`:`<img src="https://placehold.co/150x150?text=Sem+Imagem">`;
         c.innerHTML=`<div onclick="abrirDetalhesProduto(${x.id})" style="cursor:pointer">${tag}<h3>${x.nome}</h3></div><div class="price">R$ ${x.preco.toFixed(2)}</div><button class="btn-add" ${x.estoque>0?'':'disabled style="background:#555"'} onclick="adicionarAoCarrinho(${x.id},'${x.nome.replace(/'/g,"\\'")}',${x.preco})">${x.estoque>0?'Adicionar':'Indisponível'}</button>`;g.appendChild(c)})}catch(e){g.innerHTML=e.message}}
 
